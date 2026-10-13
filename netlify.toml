@@ -1,0 +1,16 @@
+# Netlify builds the app with its Next.js runtime (the OpenNext adapter), declared below. The
+# sites were first created from a branch without Next.js, so Netlify didn't detect it on its own.
+# Migrations run during the build against the direct (unpooled) database connection, then the
+# original content is imported (once: the seed records a marker and skips itself afterwards).
+[build]
+  command = "npm run db:migrate && npm run db:seed:content && npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  directory = "netlify/functions"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

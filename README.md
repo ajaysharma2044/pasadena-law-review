@@ -1,75 +1,97 @@
-# The Pasadena Law & Policy Review: website
+# The Pasadena Law & Policy Review
 
-| Folder | What's in it |
+The website and editorial system for a student law and policy journal at Pasadena City College that also holds meetings.
+
+- **Readers** see published essays, proposals, notes and Forum pieces, the issues, meetings and minutes, and the submission guidelines. They don't need an account.
+- **Members** sign up, confirm their email, and write, preview, submit, revise and withdraw their own pieces.
+- **Editors** work a review queue. They leave comments for the author and private notes for each other, recommend a decision, edit the text as a new version, and propose page changes.
+- **Administrators** approve editors, assign reviews and decide. They publish fixed copies of approved text and can roll back or unpublish them. They also run the issues, meetings, pages, masthead, settings, email status and audit log.
+
+Status: **implementation ready for review; production launch pending.** Nothing is deployed yet. `docs/manual_todo.md` lists what the owner still has to do, in order.
+
+## Stack
+
+| Layer | What |
 |---|---|
-| `SPEC.md` | The full spec prompt. Paste it into any site builder, or hand it to a developer. §13 lists the AI tells that blind reviewers caught, so nobody repeats them. |
-| `site/` | The finished website: 7 pages, plain HTML/CSS, no JavaScript, no build step. |
-| `research/` | Notes on the three reference sites, plus their screenshots. |
-| `audit/` | Verification: `report.md` (pass/fail with evidence), `checks.txt` (32 automated checks), `screens/` (full-page screenshots), `review/` (the screenshots the blind reviewers saw). |
+| App | Next.js 16 (App Router), React 19, TypeScript, Node 22 |
+| Database | PostgreSQL with Drizzle ORM and SQL migrations (`drizzle/`). Locally and in tests: PGlite, a real Postgres engine that runs in-process, with no Docker. |
+| Accounts | Better Auth: email and password, email confirmation, password reset, database sessions. Roles live in the app's own `memberships` table. |
+| Email | Transactional outbox with retries. Resend in production, a local mailbox in development. |
+| Files | Private attachments on Netlify Blobs (or S3-compatible storage, or local disk) |
+| Hosting | Netlify (see `docs/deployment.md`) |
+| Tests | Vitest (integration, against real Postgres semantics), Playwright and axe (browser journeys, accessibility, screenshots) |
 
-## Look at it
+## Run it locally
 
-Open `site/index.html` in a browser. Everything works from disk; the fonts load from Google Fonts, so you need internet.
+You need Node 22. No database or accounts are needed.
 
-## Fill in the placeholders
+```bash
+npm ci
+```
 
-Anything gray in [square brackets] is something only you know. Search `site/` for `class="tbd"` to find them all (37).
+```bash
+npm run db:seed:demo
+```
 
-- **Names:**
-  - author of "A Second Draft"
-  - editors and faculty advisor (`masthead.html`)
-  - opening speakers
-- **Logistics:**
-  - meeting day, time and room (`index.html`, `meetings.html`)
-  - contact and submissions email
-  - deadline for Number 1 and reading dates for Number 2
-- **Masthead:** `masthead.html` is built but not linked anywhere yet, because a page of [Name] lines looks fake. Once the names are in, add a Masthead link to the footer and the About page.
+```bash
+npm run dev
+```
 
-## The biggest things you can still do
+Then open http://localhost:3000.
 
-Three blind reviewers still read the site as AI-made (8/10, then 7/10, then 7/10). Everything below needs your real information, so I couldn't do it for you:
+- **First run:** creates a local database in `.data/` and imports the original site's content.
+- **`db:seed:demo`:**
+  - adds three synthetic accounts: `admin@demo.test`, `editor1@demo.test` and `editor2@demo.test`
+  - their shared local password is set in `scripts/seed-demo.ts`, or by `DEMO_PASSWORD`
+  - run it while the dev server is stopped, because only one process can open the local database
+  - it refuses to run against anything but the local database
+- **Email:** messages are never sent. They appear at http://localhost:3000/dev/mailbox, which is where you'll find confirmation links.
+- **Banner:** every page shows a development banner.
 
-1. **Write a short signed "From the editors" note** for the front page: who started the Review, when, and why. Two or three sentences, in your own words.
-2. **Make the article yours.** "A Second Draft" was copyedited to strip chatbot patterns, but the reviewers could still tell. Read it aloud and rewrite anything you wouldn't say. Then add your personal account: three concrete sentences in Part I about your own case. I deliberately didn't write that part.
-3. **Use real numbers.** Replace "almost none" and "most" with exact counts from your 13-district table ("11 of 13"). Name the districts, and if you can, publish the table as its own page. Your September research files were in a temporary folder that is gone, so you'll need to redo or recover the counts.
-4. **Show it's real.**
-   - one photo from your first meeting (top of `meetings.html`)
-   - the club's Instagram handle (there's a placeholder in the footer) or its official PCC club-directory link
-   - a named founding editor
-5. **Cite PCC's own procedure.** Part I describes "the discipline process at PCC." Cite PCC's AP 5520 by number. If PCC's academic-integrity policy really says nothing about AI, say so with a citation (I removed the uncited version of that line).
+To try production settings, copy `.env.example` to `.env.local` and fill it in. Never commit it.
 
-## Changes I made to your proposal text (so nothing surprises you)
+## Commands
 
-- I removed:
-  - the memo header (To/Re/Date)
-  - the sign-off
-  - the claim that "the research … is consistent" (it had no source)
-  - "often punitively" (no source)
-  - the line about a working prototype (in a journal it reads as a pitch for your own tool, so disclose it in the author's note if you add it back)
-- I restructured it into an introduction and three parts, cut repeated points, and fixed the Bluebook form of every citation.
-- Every remaining claim is yours.
-- Footnotes 2–5 come from your September 2026 review of 13 districts' AP 5520 procedures. Check them against the source PDFs before publishing.
+| Command | Does |
+|---|---|
+| `npm run dev` | Development server |
+| `npm run build` / `npm start` | Production build and server |
+| `npm test` | Integration tests (Vitest) |
+| `npm run test:e2e` | Browser journeys, accessibility checks and screenshots (Playwright; builds the app first) |
+| `npm run typecheck` | TypeScript |
+| `npm run db:migrate` | Apply migrations (`DATABASE_URL`, or the direct `DATABASE_URL_UNPOOLED`) |
+| `npm run db:generate` | Write a new migration after changing `src/server/db/schema.ts` |
+| `npm run db:seed:content` | Import the original pages, the draft meeting and "A Second Draft" (unpublished). Safe to run twice |
+| `npm run admin:bootstrap -- <email>` | Make a confirmed account the first administrator. Refuses if one exists |
+| `npm run jobs:run` | Send any due emails now (normally a scheduled function does this) |
+| `npm run attachments:backup -- <folder>` / `attachments:restore` | Copy attachment files out of or back into storage |
 
-## Policies I wrote as reasonable defaults
+## Where things are
 
-Edit these to match what you actually do:
+| Path | What |
+|---|---|
+| `src/app/` | Pages and API routes (`/api/*`) |
+| `src/server/` | Configuration, database, accounts, permissions, services, email, storage, Markdown rendering |
+| `src/proxy.ts` | Per-request Content Security Policy |
+| `drizzle/` | SQL migrations, including integrity triggers |
+| `tests/`, `e2e/` | Integration and browser tests |
+| `netlify.toml`, `netlify/functions/` | Netlify build and the email retry schedule |
+| `site/` | The original static site, kept for reference. Its old URLs redirect to the new pages. |
+| `SPEC.md`, `research/`, `audit/` | The static site's spec, design research and audit |
 
-- word limits
-- who can submit and who can attend
-- 5-, 2- and 1-minute speaking limits
-- two editors read each piece
-- minutes within a week
+## Documentation
 
-## Change the name
-
-Find-and-replace across `site/`:
-
-- `The Pasadena Law &amp; Policy Review` (in the HTML source)
-- `Pasadena L. &amp; Pol’y Rev.` (citation form)
-
-## Publish it (free)
-
-- **Netlify Drop:** drag the `site` folder onto app.netlify.com/drop.
-- **GitHub Pages:** put the contents of `site/` in a repository, then turn on Pages in the repository settings.
-
-If the Review becomes a chartered PCC club, ask whether using "Pasadena" in the name needs approval. Don't add PCC's logo or seal without written permission.
+| File | For |
+|---|---|
+| `docs/manual_todo.md` | **Owner: start here.** Everything left to launch, in order |
+| `docs/editor-guide.md` | Editors and administrators using the site |
+| `docs/deployment.md` | Netlify, database, environment variables, smoke tests, rollback |
+| `docs/email-setup.md` | Resend, sending domain, SPF/DKIM/DMARC, webhook |
+| `docs/operations.md` | Monitoring, backups, retention, incidents |
+| `docs/verification.md` | What was tested, how, and the results |
+| `docs/spec.md`, `docs/DESIGN.md` | Scope, roles, acceptance checklist; architecture and security design |
+| `docs/data_dictionary.md` | Every table, what it holds and who can see it |
+| `docs/repo-audit.md` | The starting point (S0) |
+| `docs/handoff_2026-10-13.md` | State of the work and how to resume |
+| `docs/ideas.md` | Possible later features |
+| `docs/static-site-notes.md` | The static site's original README (content notes) |
