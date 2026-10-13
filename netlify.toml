@@ -1,0 +1,11 @@
+# Netlify builds the app with its Next.js runtime (detected automatically).
+# Migrations run during the build against the direct (unpooled) database connection.
+[build]
+  command = "npm run db:migrate && npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  directory = "netlify/functions"
