@@ -49,7 +49,7 @@ export default async function FrontPage() {
             <h2 id="empty-heading" className="headline">Nothing published yet</h2>
             <div className="excerpt">
               <p>
-                The Review hasn’t published its first piece. Pieces appear here after two editors have read them and
+                The Journal hasn’t published its first piece. Pieces appear here after two editors have read them and
                 an administrator has approved them.
               </p>
             </div>
@@ -90,8 +90,8 @@ export default async function FrontPage() {
           <h2 id="submit-heading">Submissions</h2>
           <p>
             {settings.submissions_open
-              ? "The Review is reading essays, policy proposals, notes, and Forum replies by PCC students."
-              : "The Review is not reading new submissions right now."}{" "}
+              ? "The Journal is reading essays, policy proposals, notes, and Forum replies by PCC students."
+              : "The Journal is not reading new submissions right now."}{" "}
             Read the <Link href="/submissions">guidelines</Link>.
           </p>
         </section>

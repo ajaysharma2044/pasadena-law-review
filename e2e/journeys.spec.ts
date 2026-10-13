@@ -131,7 +131,7 @@ test.describe.serial("worked traces", () => {
     const pw = await signUpAndVerify(page, applicant.name, applicant.email);
     await signIn(page, applicant.email, pw);
     await page.goto("/account/apply");
-    await page.getByLabel("Why do you want to edit for the Review?").fill("I edited my high school paper.");
+    await page.getByLabel("Why do you want to edit for the Journal?").fill("I edited my high school paper.");
     await page.getByRole("button", { name: "Send application" }).click();
     await expect(page.getByText("Your application was sent.")).toBeVisible();
     await signOut(page);

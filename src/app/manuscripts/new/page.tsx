@@ -20,7 +20,7 @@ export default async function NewManuscript({ searchParams }: { searchParams: Se
   const settings = await getSettings();
   if (!settings.submissions_open) {
     return (
-      <Page title="Start a submission" lede="The Review isn’t reading new submissions right now.">
+      <Page title="Start a submission" lede="The Journal isn’t reading new submissions right now.">
         <p>
           <Link href="/dashboard">Back to your dashboard</Link>
         </p>

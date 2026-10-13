@@ -21,8 +21,8 @@ export const SettingsSchema = z.object({
 export type Settings = z.infer<typeof SettingsSchema>;
 
 export const DEFAULT_SETTINGS: Settings = {
-  publication_name: "The Pasadena Law & Policy Review",
-  publication_tagline: "A student journal at Pasadena City College",
+  publication_name: "Pasadena City College Law Journal",
+  publication_tagline: "A student journal of law and public policy",
   nameplate_issue_line: "Volume I, Fall 2026",
   contact_email: "",
   instagram_handle: "",

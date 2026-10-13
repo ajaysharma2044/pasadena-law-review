@@ -1,4 +1,4 @@
-# Design: Pasadena Law & Policy Review application
+# Design: Pasadena City College Law Journal application
 
 Status: written at S0, updated at S8 to match what was built. Hosting is Netlify (§16).
 

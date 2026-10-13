@@ -1,4 +1,4 @@
-# The Pasadena Law & Policy Review
+# Pasadena City College Law Journal
 
 The website and editorial system for a student law and policy journal at Pasadena City College that also holds meetings.
 

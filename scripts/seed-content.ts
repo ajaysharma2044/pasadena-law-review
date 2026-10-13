@@ -9,4 +9,4 @@ if (direct) env.DATABASE_URL = direct;
 const handle = createDatabase(loadConfig(env).database);
 const result = await seedContent(handle.db);
 await handle.close();
-console.log(result.seeded ? "Original content seeded (nothing published)." : "Content already seeded; nothing changed.");
+console.log(result.seeded ? "Original content seeded (nothing published)." : result.renamed ? `Content already seeded; renamed ${result.renamed} untouched page(s).` : "Content already seeded; nothing changed.");
