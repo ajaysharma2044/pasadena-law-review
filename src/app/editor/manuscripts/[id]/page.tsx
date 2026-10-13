@@ -334,6 +334,7 @@ export default async function EditorManuscript({ params, searchParams }: Props) 
 
           {isAdmin ? (
             <>
+              {["submitted", "in_review", "resubmitted", "changes_requested", "accepted", "declined"].includes(m.status) ? (
               <section className="panel" aria-labelledby="decide">
                 <h2 id="decide">Decision</h2>
                 <form className="form" method="post" action={`/api/admin/manuscripts/${id}/decision`}>
@@ -359,6 +360,7 @@ export default async function EditorManuscript({ params, searchParams }: Props) 
                   </div>
                 </form>
               </section>
+              ) : null}
 
               <section className="panel" aria-labelledby="checks">
                 <h2 id="checks">Publication checks</h2>

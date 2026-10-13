@@ -19,7 +19,9 @@
     "db:seed:content": "tsx --conditions=react-server scripts/seed-content.ts",
     "db:seed:demo": "tsx --conditions=react-server scripts/seed-demo.ts",
     "admin:bootstrap": "tsx --conditions=react-server scripts/bootstrap-admin.ts",
-    "jobs:run": "tsx --conditions=react-server scripts/run-jobs.ts"
+    "jobs:run": "tsx --conditions=react-server scripts/run-jobs.ts",
+    "attachments:backup": "tsx --conditions=react-server scripts/backup-attachments.ts backup",
+    "attachments:restore": "tsx --conditions=react-server scripts/backup-attachments.ts restore"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.9",
@@ -43,6 +45,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@electric-sql/pglite-socket": "0.2.12",
     "@playwright/test": "1.64.0",
     "@types/hast": "3.0.5",
