@@ -171,9 +171,9 @@ test.describe("browser console", () => {
     };
     for (const path of ["/", "/journal", "/forum", "/meetings", "/submissions", "/about", "/signin", "/signup"]) await visit(path);
     // Client-side navigation (React Server Components requests) between pages.
-    await page.getByRole("banner").getByRole("link", { name: "Meetings" }).click();
+    await page.getByRole("banner").getByRole("link", { name: "Meetings", exact: true }).click();
     await expect(page).toHaveURL(/\/meetings$/);
-    await page.getByRole("banner").getByRole("link", { name: "Journal" }).click();
+    await page.getByRole("banner").getByRole("link", { name: "Journal", exact: true }).click();
     await expect(page).toHaveURL(/\/journal$/);
 
     await signIn(page, "admin@demo.test");

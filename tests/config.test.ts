@@ -64,6 +64,13 @@ describe("configuration", () => {
     expect(problems({ ...prod, RATE_LIMITS: "off" }).join()).toMatch(/RATE_LIMITS=off/);
   });
 
+  it("treats empty values as unset (Netlify sends them to contexts without a value)", () => {
+    const c = loadConfig({ NODE_ENV: "development", DATABASE_URL: "", RESEND_API_KEY: "  ", EMAIL_TRANSPORT: "" });
+    expect(c.database.kind).toBe("pglite");
+    expect(c.email.transport).toBe("dev");
+    expect(problems({ ...prod, DATABASE_URL: "" }).join()).toMatch(/DATABASE_URL \(or NETLIFY_DATABASE_URL\) is required/);
+  });
+
   it("requires provider credentials whenever Resend is selected, even locally", () => {
     expect(problems({ NODE_ENV: "development", EMAIL_TRANSPORT: "resend" }).join()).toMatch(/RESEND_API_KEY/);
   });
