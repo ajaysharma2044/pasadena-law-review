@@ -1,0 +1,33 @@
+PASS  1  no gradients
+PASS  2  no glass/blur
+PASS  3  no box shadows
+PASS  4  no rounded cards  (found [])
+PASS  5  no emoji  (found [])
+PASS  6  no icon sets
+PASS  7  no hero with two CTAs (feature has one text link; checked visually)
+PASS  8  no stat counters
+PASS  9  no testimonials
+PASS  10 no images (none supplied yet)  (0 <img>)
+PASS  11 no motion (animation, transition, transform)
+PASS  12 no dark-mode toggle
+PASS  13 no banned fonts  (found [])
+PASS  14 white page background
+PASS  15 no decorative 01/02/03
+PASS  16 kickers only on listings  ({'about.html': 0, 'a-second-draft.html': 1, 'index.html': 0, 'issues.html': 1, 'masthead.html': 0, 'meetings.html': 0, 'submissions.html': 0})
+PASS  17 no thick left-border callouts
+PASS  18 no arrow glyphs
+PASS  19 no banned words  (found [])
+PASS  20 no banned constructions  (found [])
+PASS  21 no em dashes  (0 found)
+PASS  22 no exclamations or question headings  ([] [])
+PASS  23 no mission/vision/values headings, no Learn more/Get started  ([])
+PASS  24 no lorem ipsum
+      placeholders marked .tbd across site: 37
+PASS  28 no live dateline or decorative JS
+PASS  29 no drawn objects standing in for photos
+PASS  30 at most three uppercase styles (nav, kicker, small caps)  (2)
+PASS  31 few letter-spacing values  (['-.01em', '.02em', '.04em', '.06em', '.12em'])
+PASS  32 small type scale  (['12', '13', '14', '15', '17', '18', '19', '23'])
+PASS  25 no section comments, generator meta, or utility-class soup  (0 comments)
+PASS  26 internal links and anchors resolve
+PASS  27 WCAG AA contrast (4.5:1) for every text pair  (black on white 18.42, gray on white 6.39, red on white 9.32, white on red bar 9.32, white on red-deep 12.32, black on tint 16.6, gray on tint 5.75, red on tint 8.4)
