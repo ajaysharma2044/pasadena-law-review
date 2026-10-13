@@ -9,7 +9,9 @@ export function proxy(request: NextRequest) {
   const csp = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
-    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
+    // Next.js's development tools inject styles without the nonce. A nonce would make browsers ignore
+    // 'unsafe-inline', so development drops it; production keeps the nonce (checked in e2e/http.spec.ts).
+    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`} https://fonts.googleapis.com`,
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data:",
     "connect-src 'self'",

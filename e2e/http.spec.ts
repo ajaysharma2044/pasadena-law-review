@@ -152,3 +152,41 @@ test.describe("page-level access on client navigations", () => {
     expect(await rscPayload(page.request, "/editor/meetings", "editor")).toContain("Restorative Resolution");
   });
 });
+
+test.describe("browser console", () => {
+  test("pages run without console errors, uncaught exceptions or CSP violations", async ({ page }) => {
+    const problems: string[] = [];
+    page.on("console", (m) => {
+      if (m.type() === "error") problems.push(`${new URL(page.url()).pathname}: ${m.text()}`);
+    });
+    page.on("pageerror", (e) => problems.push(`${new URL(page.url()).pathname}: ${e.message}`));
+    await page.addInitScript(() => {
+      document.addEventListener("securitypolicyviolation", (e) =>
+        console.error(`CSP blocked ${e.effectiveDirective}: ${e.blockedURI || "inline"}`),
+      );
+    });
+    const visit = async (path: string) => {
+      await page.goto(path);
+      await page.waitForLoadState("networkidle");
+    };
+    for (const path of ["/", "/journal", "/forum", "/meetings", "/submissions", "/about", "/signin", "/signup"]) await visit(path);
+    // Client-side navigation (React Server Components requests) between pages.
+    await page.getByRole("banner").getByRole("link", { name: "Meetings" }).click();
+    await expect(page).toHaveURL(/\/meetings$/);
+    await page.getByRole("banner").getByRole("link", { name: "Journal" }).click();
+    await expect(page).toHaveURL(/\/journal$/);
+
+    await signIn(page, "admin@demo.test");
+    for (const path of ["/dashboard", "/account", "/editor", "/editor/pages", "/editor/meetings", "/admin", "/admin/members", "/admin/settings", "/admin/email", "/admin/audit"]) {
+      await visit(path);
+    }
+    // The draft editor: toolbar and live preview (client code plus a fetch to /api/preview).
+    await visit("/manuscripts/new");
+    await page.getByLabel(/Essay\./).check();
+    await page.getByRole("button", { name: "Create draft" }).click();
+    await page.getByLabel("Text, with notes").fill("A claim.[^1]\n\n[^1]: *See* :sc[Cal. Educ. Code] § 76030.");
+    await page.getByRole("button", { name: "Preview below" }).click();
+    await expect(page.getByRole("region", { name: "Preview" })).toContainText("A claim.");
+    expect(problems).toEqual([]);
+  });
+});

@@ -13,7 +13,7 @@ These results were recorded on Oct. 13, 2026, for branch `feature/journal-app` a
 | Types | `npx tsc --noEmit` | exit 0 |
 | Integration tests | `npx vitest run` | 10 files, **108 passed**, exit 0 (about 30 s) |
 | Production build | `npm run build` | exit 0, no warnings. 18 static pages; proxy (CSP) compiled. |
-| Browser suite | `npx playwright test` (builds, seeds demo data, then `next start`) | **21 passed**, exit 0. The server logged **0 errors**; the run before the security fixes logged 2. |
+| Browser suite | `npx playwright test` (builds, seeds demo data, then `next start`) | **22 passed**, exit 0. The server logged **0 errors**; the run before the security fixes logged 2. |
 | Clean checkout | fresh `git clone` of the branch at `309ef6c`, then `npm ci`, `tsc`, `vitest`, `playwright test e2e/http.spec.ts` | `npm ci` exit 0 (271 packages); tsc exit 0; 108/108; 8/8 |
 | Accessibility | axe-core (WCAG 2.0 A/AA, 2.1 AA) on 14 screens | **0 violations** of any impact (`docs/screenshots/axe-findings.json`) |
 | Layout | widths 320, 375, 768 and 1440 | no horizontal scrolling and exactly one `h1` on every checked page; 38 screenshots in `docs/screenshots/` |
@@ -62,6 +62,7 @@ These results were recorded on Oct. 13, 2026, for branch `feature/journal-app` a
 - unpublished work returns 404; the job runner returns 401
 - cross-site sign-in returns 403; private API without a session returns 401
 - **RSC access tests:** anonymous visitors, members and editors requesting admin or editor pages as client navigations
+- **browser console:** 18 page visits, plus client-side navigation and the editor's live preview, with no console errors, uncaught exceptions or CSP violations
 
 ### Production configuration refusal
 
