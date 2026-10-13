@@ -6,12 +6,7 @@ You never need to send anyone a password or API key. Secrets go straight into Ne
 
 ## 1. Review the code
 
-0. **Let this machine push the CI file**, once. GitHub requires an extra permission to push files under `.github/workflows/`:
-   ```bash
-   gh auth refresh -h github.com -s workflow
-   ```
-   It opens your browser to approve. After that, the branch can be pushed and the pull request opened.
-1. **Read the pull request** for `feature/journal-app` → `main` on GitHub. Its description links the evidence.
+1. **Read [pull request #1](https://github.com/ajaysharma2044/pasadena-law-review/pull/1)** (`feature/journal-app` → `main`). Its description summarizes the evidence; the automated checks (CI) run on it.
 2. **Merge it yourself** when you're satisfied. Nothing was merged for you.
 
 ## 2. Hosting, database and storage (about 30 minutes)

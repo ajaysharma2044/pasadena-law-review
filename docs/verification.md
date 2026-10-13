@@ -1,6 +1,6 @@
 # Verification record
 
-These results were recorded on Oct. 13, 2026, for branch `feature/journal-app` at commit `309ef6c`. This file was added in the commit after that one; it changes no code.
+These results were recorded on Oct. 13, 2026, on branch `feature/journal-app`. The clean-checkout run used commit `309ef6c`. The browser suite's 22 tests ran at `51d98a8`, after the console check was added.
 
 - **Machine:** macOS 26.0.1 (arm64), Node 22.19.0, npm 10.9.3
 - **Browser:** Google Chrome (Playwright `channel: "chrome"`; CI uses Playwright's Chromium)
@@ -136,5 +136,5 @@ For each fix, a test was written first and seen failing:
 | A hosted Postgres server (Neon) | Tested with PGlite, including over the Postgres wire protocol with the production `pg` driver | First deploy (migrations run in the build) |
 | The scheduled email-retry function | Netlify runs scheduled functions on published deploys only | Netlify → Functions → `email-retry` → Run now |
 | Backup and restore against Neon and Blobs | No hosting | `operations.md` |
-| GitHub Actions CI | First run happens when the branch is pushed | The pull request's checks |
+| GitHub Actions CI | Its first run started when the branch was pushed on Oct. 13 | The checks on pull request #1 |
 | Lighthouse performance, real phones and screen readers | Not run; accessibility was checked with axe and keyboard tests only | On staging |
