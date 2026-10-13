@@ -74,7 +74,9 @@ export class ConfigError extends Error {
 const DEV_AUTH_SECRET = "development-only-secret-not-for-production-use-0000";
 
 export function loadConfig(source: Record<string, string | undefined> = process.env): AppConfig {
-  const parsed = EnvSchema.safeParse(source);
+  // An empty value means "not set". Netlify passes empty strings to deploy contexts that have no value.
+  const present = Object.fromEntries(Object.entries(source).filter(([, v]) => v !== undefined && v.trim() !== ""));
+  const parsed = EnvSchema.safeParse(present);
   if (!parsed.success) {
     throw new ConfigError(parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`));
   }
