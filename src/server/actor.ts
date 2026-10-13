@@ -54,5 +54,15 @@ export function assertActive(actor: Actor) {
   if (actor.status === "pending") throw forbidden("pending_approval", "This account is waiting for approval.");
 }
 
+/**
+ * Services that read private data call this themselves, so a page or route that forgets its own check
+ * still gets nothing. (A page can't rely on its layout: client navigations may render the page alone.)
+ */
+export function assertRole(actor: Actor | null | undefined, roles: Role[]): asserts actor is Actor {
+  if (!actor) throw unauthorized();
+  assertActive(actor);
+  if (!roles.includes(actor.role)) throw forbidden();
+}
+
 export const isEditor = (a: Actor) => a.role === "editor" || a.role === "admin";
 export const isAdmin = (a: Actor) => a.role === "admin";

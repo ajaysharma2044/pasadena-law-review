@@ -1,25 +1,18 @@
-import { eq } from "drizzle-orm";
 import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin-nav";
-import { Flash, FormNav, Page, flashFrom, type SearchParams } from "@/components/ui";
-import { getDb } from "@/server/db/client";
-import { publications, publicationVersions } from "@/server/db/schema";
+import { AccessDenied, Flash, FormNav, Page, flashFrom, type SearchParams } from "@/components/ui";
+import { listLivePublications } from "@/server/services/admin";
 import { listMastheadAdmin } from "@/server/services/cms";
 import { getSettings } from "@/server/services/settings";
+import { pageAccess } from "@/server/session";
 
 export const metadata: Metadata = { title: "Settings" };
 
 export default async function SettingsPage({ searchParams }: { searchParams: SearchParams }) {
+  const access = await pageAccess("/admin/settings", ["admin"]);
+  if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error } = await flashFrom(searchParams);
-  const [s, masthead, live] = await Promise.all([
-    getSettings(),
-    listMastheadAdmin(),
-    getDb()
-      .select({ id: publications.id, title: publicationVersions.title })
-      .from(publications)
-      .innerJoin(publicationVersions, eq(publicationVersions.id, publications.currentVersionId))
-      .where(eq(publications.state, "live")),
-  ]);
+  const [s, masthead, live] = await Promise.all([getSettings(), listMastheadAdmin(access.actor), listLivePublications(access.actor)]);
   const rows = Array.from({ length: 12 }, (_, i) => masthead[i] ?? { roleTitle: "", personName: "" });
   const back = "/admin/settings";
   return (

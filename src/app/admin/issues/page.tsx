@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin-nav";
-import { Flash, FormNav, Page, flashFrom, type SearchParams } from "@/components/ui";
+import { AccessDenied, Flash, FormNav, Page, flashFrom, type SearchParams } from "@/components/ui";
 import { listIssuesAdmin, listVolumes } from "@/server/services/cms";
+import { pageAccess } from "@/server/session";
 
 export const metadata: Metadata = { title: "Issues" };
 
 export default async function IssuesAdmin({ searchParams }: { searchParams: SearchParams }) {
+  const access = await pageAccess("/admin/issues", ["admin"]);
+  if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error } = await flashFrom(searchParams);
-  const [issueRows, vols] = await Promise.all([listIssuesAdmin(), listVolumes()]);
+  const [issueRows, vols] = await Promise.all([listIssuesAdmin(access.actor), listVolumes(access.actor)]);
   const back = "/admin/issues";
   return (
     <Page title="Volumes and issues" lede="An issue appears on the Journal page only when it’s marked visible." wide>

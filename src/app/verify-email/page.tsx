@@ -15,11 +15,16 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
   const { notice, one } = await flashFrom(searchParams);
   const problem = one("error");
   const actor = await currentActor();
-  if (!problem && actor?.emailVerified) {
+  // The confirmation link lands here with confirmed=1. It doesn't sign anyone in (see auth.ts).
+  if (!problem && (actor?.emailVerified || one("confirmed") === "1")) {
     return (
       <Page title="Email confirmed" lede="Your account is ready.">
         <p>
-          <Link className="button button-primary" href="/dashboard">Go to your dashboard</Link>
+          {actor?.emailVerified ? (
+            <Link className="button button-primary" href="/dashboard">Go to your dashboard</Link>
+          ) : (
+            <Link className="button button-primary" href="/signin?next=%2Fdashboard">Sign in</Link>
+          )}
         </p>
       </Page>
     );

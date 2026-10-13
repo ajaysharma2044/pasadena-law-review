@@ -32,6 +32,13 @@ const EnvSchema = z.object({
   S3_SECRET_ACCESS_KEY: optional,
   CRON_SECRET: optional,
   RATE_LIMITS: z.enum(["on", "off"]).default("on"),
+  // The one request header that carries the client's address, set by the host's own proxy. Netlify's
+  // is the default. Clients can send any header themselves, so no other header is ever trusted.
+  TRUSTED_IP_HEADER: z
+    .string()
+    .regex(/^[A-Za-z0-9-]+$/, "must be a header name")
+    .default("x-nf-client-connection-ip")
+    .transform((h) => h.toLowerCase()),
   // Explicit opt-in for running a production build locally (e2e tests). Shows a warning banner.
   PLR_LOCAL_PREVIEW: z.enum(["1", "0"]).default("0"),
 });
@@ -53,6 +60,7 @@ export type AppConfig = {
     | { driver: "s3"; endpoint: string; region: string; bucket: string; accessKeyId: string; secretAccessKey: string };
   cronSecret: string | null;
   rateLimits: boolean;
+  trustedIpHeader: string;
 };
 
 export class ConfigError extends Error {
@@ -141,6 +149,7 @@ export function loadConfig(source: Record<string, string | undefined> = process.
 
   if (strict && !env.CRON_SECRET) problems.push("CRON_SECRET is required in production (protects the job runner)");
   if (env.CRON_SECRET && env.CRON_SECRET.length < 24) problems.push("CRON_SECRET must be at least 24 characters");
+  if (strict && env.RATE_LIMITS === "off") problems.push("RATE_LIMITS=off is not allowed in production");
 
   if (problems.length) throw new ConfigError(problems);
 
@@ -154,6 +163,7 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     storage,
     cronSecret: env.CRON_SECRET ?? null,
     rateLimits: env.RATE_LIMITS === "on",
+    trustedIpHeader: env.TRUSTED_IP_HEADER,
   };
 }
 

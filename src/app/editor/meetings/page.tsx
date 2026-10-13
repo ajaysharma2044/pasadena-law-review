@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EditorNav } from "@/components/editor-nav";
-import { Flash, Page, flashFrom, type SearchParams } from "@/components/ui";
+import { AccessDenied, Flash, Page, flashFrom, type SearchParams } from "@/components/ui";
 import { listMeetings } from "@/server/services/cms";
 import { formatMeetingTime } from "@/server/services/public-content";
+import { pageAccess } from "@/server/session";
 
 export const metadata: Metadata = { title: "Meetings" };
 
 const LABEL = { draft: "Draft (not public)", announced: "Announced", held: "Held", cancelled: "Cancelled" } as const;
 
 export default async function MeetingsAdmin({ searchParams }: { searchParams: SearchParams }) {
+  const access = await pageAccess("/editor/meetings", ["editor", "admin"]);
+  if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error } = await flashFrom(searchParams);
-  const rows = await listMeetings();
+  const rows = await listMeetings(access.actor);
   return (
     <Page title="Meetings" lede="Editors can prepare drafts and minutes. An administrator announces meetings and publishes minutes." wide>
       <EditorNav current="/editor/meetings" />

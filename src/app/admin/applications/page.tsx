@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin-nav";
-import { Flash, FormNav, Page, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
+import { AccessDenied, Flash, FormNav, Page, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
 import { listApplications } from "@/server/services/applications";
+import { pageAccess } from "@/server/session";
 
 export const metadata: Metadata = { title: "Editor applications" };
 
 export default async function ApplicationsPage({ searchParams }: { searchParams: SearchParams }) {
+  const access = await pageAccess("/admin/applications", ["admin"]);
+  if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error, one } = await flashFrom(searchParams);
   const status = one("status") ?? "pending";
-  const apps = await listApplications(status === "all" ? undefined : status);
+  const apps = await listApplications(access.actor, status === "all" ? undefined : status);
   const back = `/admin/applications?status=${status}`;
   return (
     <Page title="Editor applications" wide>

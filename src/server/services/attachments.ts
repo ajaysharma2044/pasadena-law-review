@@ -86,13 +86,14 @@ export async function authorizeDownload(actor: Actor, attachmentId: string) {
   assertActive(actor);
   const db = getDb();
   const [row] = await db
-    .select({ a: attachments, authorId: manuscripts.authorId, status: manuscripts.status })
+    .select({ a: attachments, authorId: manuscripts.authorId, status: manuscripts.status, submitted: manuscripts.currentRevisionId })
     .from(attachments)
     .innerJoin(manuscripts, eq(manuscripts.id, attachments.manuscriptId))
     .where(and(eq(attachments.id, attachmentId), isNull(attachments.deletedAt)));
   if (!row) throw notFound();
   const own = row.authorId === actor.userId;
-  const editorial = (actor.role === "editor" || actor.role === "admin") && row.status !== "draft" && !own;
+  // Editors see files only once the piece has been submitted (a draft withdrawn unsent stays private).
+  const editorial = (actor.role === "editor" || actor.role === "admin") && row.status !== "draft" && row.submitted !== null && !own;
   if (!own && !editorial) throw notFound();
   return row.a;
 }

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
 import { assertActive, type Actor } from "../actor";
 import { audit } from "../audit";
 import { getConfig } from "../config";
@@ -25,7 +25,7 @@ import { templates } from "../email/templates";
 import { AppError, conflict, forbidden, invalid, notFound } from "../errors";
 import { renderMarkdown } from "../render/markdown";
 import { isUniqueViolation } from "./applications";
-import { getSettings } from "./settings";
+import { getSetting, getSettings } from "./settings";
 
 export type Kind = "essay" | "proposal" | "note" | "forum";
 export type Status = (typeof manuscripts.$inferSelect)["status"];
@@ -85,10 +85,13 @@ async function publicationName() {
 
 // ---------------------------------------------------------------- author
 
+const submissionsClosed = () => conflict("submissions_closed", "Submissions are closed right now.");
+
 export async function createDraft(actor: Actor, kind: string) {
   assertActive(actor);
   if (!KINDS.includes(kind as Kind)) throw invalid("Choose Essay, Proposal, Note or Forum.", { kind: "invalid" });
   const db = getDb();
+  if (!(await getSetting("submissions_open", db))) throw submissionsClosed();
   const [row] = await db.insert(manuscripts).values({ authorId: actor.userId, kind: kind as Kind }).returning({ id: manuscripts.id });
   await audit(db, { actorId: actor.userId, action: "manuscript.create", targetType: "manuscript", targetId: row.id });
   return { id: row.id };
@@ -139,6 +142,8 @@ export async function submit(actor: Actor, id: string, expectedVersion: number, 
     if (m.authorId !== actor.userId) throw notFound();
     if (!EDITABLE_BY_AUTHOR.includes(m.status)) throw badTransition();
     if (m.version !== expectedVersion) throw stale();
+    // Closing submissions stops new pieces; revisions the editors asked for still come in.
+    if (m.status === "draft" && !(await getSetting("submissions_open", tx))) throw submissionsClosed();
     const missing: Record<string, string> = {};
     if (!m.title.trim()) missing.title = "required";
     if (!m.bodyMd.trim()) missing.bodyMd = "required";
@@ -244,10 +249,11 @@ export async function listMine(actor: Actor) {
 
 // ---------------------------------------------------------------- editors
 
-function assertEditorFor(actor: Actor, m: { authorId: string | null; status: Status }) {
+function assertEditorFor(actor: Actor, m: { authorId: string | null; status: Status; currentRevisionId: string | null }) {
   assertActive(actor);
   if (!isEditorRole(actor)) throw forbidden();
-  if (m.status === "draft") throw notFound(); // drafts are private to their authors
+  // Drafts, including drafts withdrawn before they were ever submitted, are private to their authors.
+  if (m.status === "draft" || !m.currentRevisionId) throw notFound();
   if (m.authorId === actor.userId) throw forbidden("self_review", "You can’t review your own work.");
 }
 
@@ -295,7 +301,11 @@ export async function listQueue(actor: Actor, f: { kind?: string; status?: strin
   assertActive(actor);
   if (!isEditorRole(actor)) throw forbidden();
   const db = getDb();
-  const conds = [ne(manuscripts.status, "draft"), sql`(${manuscripts.authorId} is null or ${manuscripts.authorId} <> ${actor.userId})`];
+  const conds = [
+    ne(manuscripts.status, "draft"),
+    isNotNull(manuscripts.currentRevisionId), // never submitted: private to the author
+    sql`(${manuscripts.authorId} is null or ${manuscripts.authorId} <> ${actor.userId})`,
+  ];
   const statuses = f.status && f.status !== "all" ? [f.status as Status] : f.status === "all" ? undefined : QUEUE_STATUSES;
   if (statuses) conds.push(inArray(manuscripts.status, statuses));
   if (f.kind && KINDS.includes(f.kind as Kind)) conds.push(eq(manuscripts.kind, f.kind as Kind));
@@ -521,21 +531,33 @@ export async function decide(actor: Actor, id: string, expectedVersion: number, 
   await deliverSoon();
 }
 
+const ownWork = () => forbidden("self_decision", "Another administrator has to handle your own work.");
+
 export async function addCheck(actor: Actor, id: string, label: string) {
+  assertActive(actor);
   if (actor.role !== "admin") throw forbidden();
   const text = label.trim();
   if (!text) throw invalid("Describe the check.", { label: "required" });
   const db = getDb();
-  const [m] = await db.select({ id: manuscripts.id }).from(manuscripts).where(eq(manuscripts.id, id));
+  const [m] = await db.select({ id: manuscripts.id, authorId: manuscripts.authorId }).from(manuscripts).where(eq(manuscripts.id, id));
   if (!m) throw notFound();
+  if (m.authorId === actor.userId) throw ownWork();
   const [row] = await db.insert(publicationChecks).values({ manuscriptId: id, label: text.slice(0, 300) }).returning({ id: publicationChecks.id });
   await audit(db, { actorId: actor.userId, action: "check.add", targetType: "manuscript", targetId: id });
   return { id: row.id };
 }
 
 export async function setCheck(actor: Actor, checkId: string, resolved: boolean) {
+  assertActive(actor);
   if (actor.role !== "admin") throw forbidden();
   const db = getDb();
+  const [c] = await db
+    .select({ authorId: manuscripts.authorId })
+    .from(publicationChecks)
+    .innerJoin(manuscripts, eq(manuscripts.id, publicationChecks.manuscriptId))
+    .where(eq(publicationChecks.id, checkId));
+  if (!c) throw notFound();
+  if (c.authorId === actor.userId) throw ownWork();
   const rows = await db
     .update(publicationChecks)
     .set({ resolved, resolvedBy: resolved ? actor.userId : null, resolvedAt: resolved ? new Date() : null })
@@ -616,7 +638,8 @@ export async function unpublish(actor: Actor, id: string) {
   if (actor.role !== "admin") throw forbidden();
   const db = getDb();
   await db.transaction(async (tx) => {
-    await loadForUpdate(tx, id);
+    const m = await loadForUpdate(tx, id);
+    if (m.authorId === actor.userId) throw ownWork();
     const rows = await tx.update(publications).set({ state: "unpublished", updatedAt: new Date() }).where(and(eq(publications.manuscriptId, id), eq(publications.state, "live"))).returning({ id: publications.id });
     if (!rows.length) throw badTransition();
     await setStatus(tx, id, ["published"], "accepted");
@@ -630,6 +653,7 @@ export async function restoreVersion(actor: Actor, id: string, versionId: string
   const db = getDb();
   await db.transaction(async (tx) => {
     const m = await loadForUpdate(tx, id);
+    if (m.authorId === actor.userId) throw ownWork();
     if (m.status !== "published" && m.status !== "accepted") throw badTransition();
     const [p] = await tx.select().from(publications).where(eq(publications.manuscriptId, id)).for("update");
     if (!p) throw badTransition();

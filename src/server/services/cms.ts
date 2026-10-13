@@ -81,7 +81,8 @@ export async function rejectPageVersion(actor: Actor, versionId: string) {
   await audit(db, { actorId: actor.userId, action: "page.reject", targetType: "page", targetId: rows[0].key, metadata: { version: versionId } });
 }
 
-export async function pageVersions(key: string) {
+export async function pageVersions(actor: Actor, key: string) {
+  requireEditor(actor);
   const k = pageKey(key);
   return getDb()
     .select({ id: cmsPageVersions.id, status: cmsPageVersions.status, bodyMd: cmsPageVersions.bodyMd, note: cmsPageVersions.note, createdAt: cmsPageVersions.createdAt, decidedAt: cmsPageVersions.decidedAt, author: user.name })
@@ -92,7 +93,8 @@ export async function pageVersions(key: string) {
     .limit(30);
 }
 
-export async function pagesOverview() {
+export async function pagesOverview(actor: Actor) {
+  requireEditor(actor);
   const rows = await getDb()
     .select({ key: cmsPageVersions.pageKey, status: cmsPageVersions.status, n: sql<number>`count(*)::int` })
     .from(cmsPageVersions)
@@ -205,11 +207,13 @@ export async function saveMeeting(actor: Actor, id: string | null, expectedVersi
   return { id };
 }
 
-export async function listMeetings() {
+export async function listMeetings(actor: Actor) {
+  requireEditor(actor);
   return getDb().select().from(meetings).orderBy(desc(meetings.createdAt));
 }
 
-export async function getMeeting(id: string) {
+export async function getMeeting(actor: Actor, id: string) {
+  requireEditor(actor);
   const [m] = await getDb().select().from(meetings).where(eq(meetings.id, id));
   return m ?? null;
 }
@@ -248,7 +252,8 @@ export async function saveIssue(actor: Actor, input: { id?: string; volumeId: st
   return row;
 }
 
-export async function listIssuesAdmin() {
+export async function listIssuesAdmin(actor: Actor) {
+  requireAdmin(actor);
   const db = getDb();
   const rows = await db
     .select({ id: issues.id, number: issues.number, termLabel: issues.termLabel, visible: issues.visible, sortOrder: issues.sortOrder, volumeId: volumes.id, volumeLabel: volumes.label, volumeNumber: volumes.number, yearLabel: volumes.yearLabel })
@@ -259,7 +264,8 @@ export async function listIssuesAdmin() {
   return rows.map((r) => ({ ...r, livePieces: counts.find((c) => c.issueId === r.id)?.n ?? 0 }));
 }
 
-export async function listVolumes() {
+export async function listVolumes(actor: Actor) {
+  requireAdmin(actor);
   return getDb().select().from(volumes).orderBy(desc(volumes.number));
 }
 
@@ -306,6 +312,7 @@ export async function saveMasthead(actor: Actor, entries: { roleTitle: string; p
   });
 }
 
-export async function listMastheadAdmin() {
+export async function listMastheadAdmin(actor: Actor) {
+  requireAdmin(actor);
   return getDb().select().from(mastheadEntries).orderBy(asc(mastheadEntries.sortOrder));
 }

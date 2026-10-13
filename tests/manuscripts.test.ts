@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { getDb } from "@/server/db/client";
 import * as s from "@/server/db/schema";
 import { AppError } from "@/server/errors";
+import { updateSettings } from "@/server/services/cms";
 import * as m from "@/server/services/manuscripts";
 import { getLiveArticle, listLive, listVisibleIssues } from "@/server/services/public-content";
 import { setupApp } from "./helpers/app";
@@ -310,5 +311,61 @@ describe("S5: publication snapshots", () => {
     await m.publish(admin, id, { revisionId: v.manuscript.currentRevisionId!, slug: "mailed", byline: "A" });
     const jobs = await getDb().select().from(s.emailJobs).where(and(eq(s.emailJobs.toEmail, author.email), eq(s.emailJobs.kind, "published")));
     expect(jobs).toHaveLength(1);
+  });
+});
+
+describe("security review follow-ups", () => {
+  it("keeps a draft that was withdrawn before submission private to its author", async () => {
+    const author = await actor();
+    const [editor, admin] = [await actor("editor"), await actor("admin")];
+    const { id } = await m.createDraft(author, "essay");
+    await m.saveDraft(author, id, 1, { title: "Never Sent", bodyMd: "Private." });
+    await m.withdraw(author, id);
+    await expectCode(m.getForEditor(editor, id), 404);
+    await expectCode(m.getForEditor(admin, id), 404);
+    await expectCode(m.claim(editor, id), 404);
+    for (const status of ["withdrawn", "all"]) {
+      expect((await m.listQueue(editor, { status })).map((r) => r.id)).not.toContain(id);
+    }
+    // A piece withdrawn after it was submitted stays in the editorial record.
+    const sent = await draftAndSubmit(author, "Sent, Then Withdrawn");
+    await m.withdraw(author, sent);
+    expect((await m.listQueue(editor, { status: "withdrawn" })).map((r) => r.id)).toContain(sent);
+  });
+
+  it("doesn't let an administrator act on the publication of their own work", async () => {
+    const adminAuthor = await actor("admin");
+    const [ed1, ed2, other] = [await actor("editor"), await actor("editor"), await actor("admin")];
+    const id = await draftAndSubmit(adminAuthor, "An Administrator's Essay");
+    await reviewToAcceptance(id, ed1, ed2, other);
+    await expectCode(m.addCheck(adminAuthor, id, "Cite-check"), 403, "self_decision");
+    const check = await m.addCheck(other, id, "Cite-check");
+    await expectCode(m.setCheck(adminAuthor, check.id, true), 403, "self_decision");
+    await m.setCheck(other, check.id, true);
+    const v = await m.getForEditor(other, id);
+    await m.publish(other, id, { revisionId: v.manuscript.currentRevisionId!, slug: "admins-essay", byline: "A. Admin" });
+    await expectCode(m.unpublish(adminAuthor, id), 403, "self_decision");
+    await m.unpublish(other, id);
+    const versionId = (await m.getForEditor(other, id)).publication!.versions[0].id;
+    await expectCode(m.restoreVersion(adminAuthor, id, versionId), 403, "self_decision");
+    expect(await getLiveArticle("admins-essay")).toBeNull();
+  });
+
+  it("enforces closed submissions on the server, but still takes resubmissions", async () => {
+    const author = await actor();
+    const [ed1, admin] = [await actor("editor"), await actor("admin")];
+    const { id: draftId } = await m.createDraft(author, "essay");
+    const saved = await m.saveDraft(author, draftId, 1, { title: "Late", bodyMd: sampleBody });
+    const sent = await draftAndSubmit(author, "Sent Before Closing");
+    await m.claim(ed1, sent);
+    const v = await m.getForEditor(admin, sent);
+    await m.decide(admin, sent, v.manuscript.version, "request_changes", "Tighten Part II.");
+
+    await updateSettings(admin, { submissions_open: false });
+    await expectCode(m.createDraft(author, "essay"), 409, "submissions_closed");
+    await expectCode(m.submit(author, draftId, saved.version, confirmations), 409, "submissions_closed");
+    const mine = await m.getForAuthor(author, sent);
+    await m.submit(author, sent, mine.manuscript.version, confirmations);
+    expect((await m.getForAuthor(author, sent)).manuscript.status).toBe("resubmitted");
   });
 });

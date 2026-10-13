@@ -81,6 +81,16 @@ describe("attachment access", () => {
     await expectStatus(att.uploadAttachment(author, id, { name: "late.pdf", bytes: PDF }), 409); // locked under review
   });
 
+  it("keeps the files of a draft withdrawn before submission away from editors", async () => {
+    const author = await actor();
+    const editor = await actor("editor");
+    const { id } = await m.createDraft(author, "essay");
+    const up = await att.uploadAttachment(author, id, { name: "paper.pdf", bytes: PDF });
+    await m.withdraw(author, id);
+    await expectStatus(att.readAttachment(editor, up.id), 404);
+    expect((await att.readAttachment(author, up.id)).kind).toBe("bytes");
+  });
+
   it("refuses oversized files", async () => {
     const author = await actor();
     const { id } = await m.createDraft(author, "essay");

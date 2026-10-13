@@ -24,12 +24,14 @@ export async function rateLimit(key: string, limit: number, windowSeconds: numbe
   }
 }
 
-/** Client IP for rate limiting. Netlify sets x-nf-client-connection-ip; other proxies set x-forwarded-for. */
+/**
+ * Client IP for rate limiting, read only from the header the host's proxy sets (TRUSTED_IP_HEADER).
+ * In an X-Forwarded-For chain only the last entry was added by our own proxy; earlier ones are the client's word.
+ */
 export function clientIp(headers: Headers): string {
-  return (
-    headers.get("x-nf-client-connection-ip") ??
-    headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    headers.get("x-real-ip") ??
-    "unknown"
-  );
+  const name = getConfig().trustedIpHeader;
+  const value = headers.get(name);
+  if (!value) return "unknown";
+  const ip = name === "x-forwarded-for" ? value.split(",").at(-1) : value;
+  return ip?.trim() || "unknown";
 }

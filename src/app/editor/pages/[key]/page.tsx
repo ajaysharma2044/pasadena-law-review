@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ManuscriptBody } from "@/components/manuscript-editor";
 import { EditorNav } from "@/components/editor-nav";
-import { Flash, FormNav, Page, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
+import { AccessDenied, Flash, FormNav, Page, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
 import { renderMarkdown } from "@/server/render/markdown";
 import { PAGE_LABELS, pageVersions } from "@/server/services/cms";
 import { PAGE_KEYS, type PageKey } from "@/server/services/public-content";
-import { currentActor } from "@/server/session";
+import { pageAccess } from "@/server/session";
 
 export const metadata: Metadata = { title: "Edit page" };
 
@@ -15,9 +15,11 @@ type Props = { params: Promise<{ key: string }>; searchParams: SearchParams };
 export default async function EditPage({ params, searchParams }: Props) {
   const { key } = await params;
   if (!PAGE_KEYS.includes(key as PageKey)) notFound();
+  const access = await pageAccess(`/editor/pages/${key}`, ["editor", "admin"]);
+  if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error } = await flashFrom(searchParams);
-  const actor = (await currentActor())!;
-  const versions = await pageVersions(key);
+  const actor = access.actor;
+  const versions = await pageVersions(actor, key);
   const published = versions.find((v) => v.status === "published");
   const proposals = versions.filter((v) => v.status === "proposed");
   const back = `/editor/pages/${key}`;

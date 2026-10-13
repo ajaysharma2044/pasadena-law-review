@@ -1,5 +1,5 @@
 import { and, desc, eq } from "drizzle-orm";
-import type { Actor } from "../actor";
+import { assertRole, type Actor } from "../actor";
 import { audit } from "../audit";
 import { getConfig } from "../config";
 import { getDb } from "../db/client";
@@ -79,7 +79,8 @@ export async function decideApplication(actor: Actor, id: string, decision: stri
   await deliverSoon();
 }
 
-export async function listApplications(status?: string) {
+export async function listApplications(actor: Actor, status?: string) {
+  assertRole(actor, ["admin"]);
   const valid = ["pending", "approved", "declined", "withdrawn"].includes(status ?? "") ? (status as "pending") : undefined;
   return getDb()
     .select({

@@ -1,19 +1,15 @@
-import { desc, eq } from "drizzle-orm";
 import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin-nav";
-import { Page, formatDateTime } from "@/components/ui";
-import { getDb } from "@/server/db/client";
-import { auditEvents, user } from "@/server/db/schema";
+import { AccessDenied, Page, formatDateTime } from "@/components/ui";
+import { listAuditEvents } from "@/server/services/admin";
+import { pageAccess } from "@/server/session";
 
 export const metadata: Metadata = { title: "Audit log" };
 
 export default async function AuditPage() {
-  const rows = await getDb()
-    .select({ id: auditEvents.id, action: auditEvents.action, targetType: auditEvents.targetType, targetId: auditEvents.targetId, metadata: auditEvents.metadata, createdAt: auditEvents.createdAt, actor: user.name })
-    .from(auditEvents)
-    .leftJoin(user, eq(user.id, auditEvents.actorId))
-    .orderBy(desc(auditEvents.createdAt))
-    .limit(200);
+  const access = await pageAccess("/admin/audit", ["admin"]);
+  if (!access.ok) return <AccessDenied reason={access.reason} />;
+  const rows = await listAuditEvents(access.actor);
   return (
     <Page title="Audit log" lede="The last 200 recorded actions. Entries can’t be edited or deleted." wide>
       <AdminNav current="/admin/audit" />

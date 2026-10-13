@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EditorNav } from "@/components/editor-nav";
-import { Flash, Page, STATUS_LABEL, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
+import { AccessDenied, Flash, Page, STATUS_LABEL, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
 import { KIND_LABEL } from "@/server/services/public-content";
 import { listQueue } from "@/server/services/manuscripts";
-import { currentActor } from "@/server/session";
+import { pageAccess } from "@/server/session";
 
 export const metadata: Metadata = { title: "Review queue" };
 
 export default async function Queue({ searchParams }: { searchParams: SearchParams }) {
+  const access = await pageAccess("/editor", ["editor", "admin"]);
+  if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error, one } = await flashFrom(searchParams);
-  const actor = (await currentActor())!;
+  const actor = access.actor;
   const filters = { kind: one("kind") ?? "", status: one("status") ?? "", assignment: one("assignment") ?? "all" };
   const items = await listQueue(actor, filters);
   return (

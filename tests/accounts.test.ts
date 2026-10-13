@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as signOutRoute from "@/app/api/session/sign-out/route";
+import * as signUpRoute from "@/app/api/session/sign-up/route";
 import * as resendRoute from "@/app/api/session/resend-verification/route";
 import * as forgotRoute from "@/app/api/session/forgot-password/route";
 import * as resetRoute from "@/app/api/session/reset-password/route";
@@ -10,6 +11,8 @@ import * as roleRoute from "@/app/api/admin/members/[id]/role/route";
 import * as statusRoute from "@/app/api/admin/members/[id]/status/route";
 import * as decideRoute from "@/app/api/admin/applications/[id]/decision/route";
 import { getActor } from "@/server/actor";
+import { loadConfig, setConfigForTests } from "@/server/config";
+import { clientIp } from "@/server/ratelimit";
 import { getDb } from "@/server/db/client";
 import * as s from "@/server/db/schema";
 import { bootstrapAdmin } from "@/server/services/members";
@@ -53,16 +56,20 @@ describe("sign-up and verification", () => {
     expect(cookie).toBe("");
   });
 
-  it("verifies through the emailed link, signs in once, and a replayed link creates no new session", async () => {
+  it("confirms the address through the emailed link without signing anyone in", async () => {
+    // Opening the link only confirms the address. Otherwise someone who opened another person's link
+    // would be signed in to that person's account without noticing.
     await signUp("cy@example.org");
+    const live = (r: Response) => r.headers.getSetCookie().some((c) => c.includes("session_token=") && !c.includes("Max-Age=0"));
     const first = await openVerificationLink("cy@example.org");
-    expect(first.headers.getSetCookie().some((c) => c.includes("session_token="))).toBe(true);
+    expect(live(first)).toBe(false);
+    expect(first.headers.get("location")).toContain("/verify-email?confirmed=1");
     const u = await userByEmail("cy@example.org");
     expect(u.emailVerified).toBe(true);
-    const sessionsAfterFirst = (await getDb().select().from(s.session).where(eq(s.session.userId, u.id))).length;
     const replay = await openVerificationLink("cy@example.org");
-    expect(replay.headers.getSetCookie().some((c) => c.includes("session_token=") && !c.includes("Max-Age=0"))).toBe(false);
-    expect((await getDb().select().from(s.session).where(eq(s.session.userId, u.id))).length).toBe(sessionsAfterFirst);
+    expect(live(replay)).toBe(false);
+    expect((await getDb().select().from(s.session).where(eq(s.session.userId, u.id))).length).toBe(0);
+    expect((await signIn("cy@example.org")).cookie).not.toBe("");
   });
 
   it("rejects an expired verification link", async () => {
@@ -253,5 +260,30 @@ describe("session handling and rate limits", () => {
     let last = 0;
     for (let i = 0; i < 9; i++) last = (await signIn("tia@example.org", "wrong password!")).res.status;
     expect(last).toBe(429);
+  });
+
+  it("limits sign-ups per address, and made-up forwarding headers don't reset the per-IP limit", async () => {
+    await handle.close();
+    handle = await setupApp({ RATE_LIMITS: "on" });
+    for (let i = 0; i < 3; i++) expect((await signUp("una@example.org")).status).toBe(200);
+    expect((await signUp("una@example.org")).status).toBe(429);
+    let last = 0;
+    for (let i = 0; i < 8; i++) {
+      const res = await call(signUpRoute, "POST", "/api/session/sign-up", {
+        json: { name: `V${i}`, email: `v${i}@example.org`, password: PASSWORD },
+        headers: { "x-forwarded-for": `198.51.100.${i}`, "x-real-ip": `203.0.113.${i}` },
+      });
+      last = res.status;
+    }
+    expect(last).toBe(429);
+  });
+
+  it("reads the client address only from the configured proxy header", () => {
+    expect(clientIp(new Headers({ "x-forwarded-for": "198.51.100.1", "x-real-ip": "198.51.100.2" }))).toBe("unknown");
+    expect(clientIp(new Headers({ "x-nf-client-connection-ip": "203.0.113.9" }))).toBe("203.0.113.9");
+    setConfigForTests(loadConfig({ NODE_ENV: "test", TRUSTED_IP_HEADER: "x-forwarded-for" }));
+    // With a forwarding chain, only the last hop was added by our own proxy.
+    expect(clientIp(new Headers({ "x-forwarded-for": "198.51.100.1, 203.0.113.7" }))).toBe("203.0.113.7");
+    expect(() => loadConfig({ NODE_ENV: "test", TRUSTED_IP_HEADER: "Not A Header!" })).toThrow();
   });
 });

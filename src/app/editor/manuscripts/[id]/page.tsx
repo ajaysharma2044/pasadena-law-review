@@ -11,7 +11,7 @@ import { listIssuesAdmin } from "@/server/services/cms";
 import { getForEditor } from "@/server/services/manuscripts";
 import { listEditors } from "@/server/services/members";
 import { KIND_LABEL } from "@/server/services/public-content";
-import { currentActor } from "@/server/session";
+import { pageAccess } from "@/server/session";
 
 export const metadata: Metadata = { title: "Manuscript" };
 
@@ -33,14 +33,16 @@ type Props = { params: Promise<{ id: string }>; searchParams: SearchParams };
 
 export default async function EditorManuscript({ params, searchParams }: Props) {
   const { id } = await params;
+  const access = await pageAccess(`/editor/manuscripts/${encodeURIComponent(id)}`, ["editor", "admin"]);
+  if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error, one } = await flashFrom(searchParams);
-  const actor = (await currentActor())!;
+  const actor = access.actor;
   let d;
   try {
     d = await getForEditor(actor, id);
   } catch (e) {
     if (e instanceof AppError && e.status === 404) notFound();
-    if (e instanceof AppError && e.status === 403) return <AccessDenied reason={e.code === "self_review" ? "forbidden" : "forbidden"} />;
+    if (e instanceof AppError && e.status === 403) return <AccessDenied reason="forbidden" />;
     throw e;
   }
   const m = d.manuscript;
@@ -57,7 +59,7 @@ export default async function EditorManuscript({ params, searchParams }: Props) 
   const liveVersion = d.publication?.versions.find((v) => v.id === d.publication?.currentVersionId);
   const liveRevision = liveVersion ? d.revisions.find((r) => r.id === liveVersion.revisionId) : undefined;
   const openChecks = d.checks.filter((c) => !c.resolved).length;
-  const [editors, issueList] = isAdmin ? await Promise.all([listEditors(), listIssuesAdmin()]) : [[], []];
+  const [editors, issueList] = isAdmin ? await Promise.all([listEditors(actor), listIssuesAdmin(actor)]) : [[], []];
   const canRecommend = Boolean(mine) && (m.status === "in_review" || m.status === "resubmitted");
   const myRec = d.currentRecs.find((r) => r.editorId === actor.userId);
 

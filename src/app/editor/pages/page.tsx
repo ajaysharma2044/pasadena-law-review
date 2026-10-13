@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EditorNav } from "@/components/editor-nav";
-import { Flash, Page, flashFrom, type SearchParams } from "@/components/ui";
+import { AccessDenied, Flash, Page, flashFrom, type SearchParams } from "@/components/ui";
 import { pagesOverview } from "@/server/services/cms";
+import { pageAccess } from "@/server/session";
 
 export const metadata: Metadata = { title: "Pages" };
 
 export default async function PagesIndex({ searchParams }: { searchParams: SearchParams }) {
+  const access = await pageAccess("/editor/pages", ["editor", "admin"]);
+  if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error } = await flashFrom(searchParams);
-  const pages = await pagesOverview();
+  const pages = await pagesOverview(access.actor);
   return (
     <Page title="Pages" lede="Editors propose changes to these pages. An administrator publishes them." wide>
       <EditorNav current="/editor/pages" />

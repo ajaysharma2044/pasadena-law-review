@@ -61,6 +61,7 @@ describe("configuration", () => {
     expect(problems({ ...prod, DATABASE_URL: "file:./local.db" }).join()).toMatch(/postgres:\/\//);
     expect(problems({ ...prod, STORAGE_DRIVER: "s3" }).join()).toMatch(/S3_BUCKET/);
     expect(problems({ ...prod, CRON_SECRET: "short" }).join()).toMatch(/CRON_SECRET must be at least 24/);
+    expect(problems({ ...prod, RATE_LIMITS: "off" }).join()).toMatch(/RATE_LIMITS=off/);
   });
 
   it("requires provider credentials whenever Resend is selected, even locally", () => {

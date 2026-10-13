@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin-nav";
-import { Flash, FormNav, Page, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
+import { AccessDenied, Flash, FormNav, Page, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
 import { listMembers } from "@/server/services/members";
+import { pageAccess } from "@/server/session";
 
 export const metadata: Metadata = { title: "Members" };
 
 export default async function MembersPage({ searchParams }: { searchParams: SearchParams }) {
+  const access = await pageAccess("/admin/members", ["admin"]);
+  if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error, one } = await flashFrom(searchParams);
   const filters = { q: one("q") ?? "", role: one("role") ?? "", status: one("status") ?? "" };
-  const members = await listMembers(filters);
+  const members = await listMembers(access.actor, filters);
   const back = `/admin/members?${new URLSearchParams(filters).toString()}`;
   return (
     <Page title="Members" wide>

@@ -58,7 +58,9 @@ function build() {
     emailVerification: {
       sendOnSignUp: true,
       sendOnSignIn: false,
-      autoSignInAfterVerification: true,
+      // Opening the link confirms the address only. Signing in is separate, so opening someone else's
+      // link can't sign you in to their account.
+      autoSignInAfterVerification: false,
       expiresIn: 60 * 60,
       sendVerificationEmail: async ({ user, url, token }) => {
         const pub = (await getSettings(db)).publication_name;
@@ -82,7 +84,7 @@ function build() {
     rateLimit: { enabled: false },
     advanced: {
       useSecureCookies: config.appUrl.startsWith("https://"),
-      ipAddress: { ipAddressHeaders: ["x-nf-client-connection-ip", "x-forwarded-for"] },
+      ipAddress: { ipAddressHeaders: [config.trustedIpHeader] },
     },
     databaseHooks: {
       user: {

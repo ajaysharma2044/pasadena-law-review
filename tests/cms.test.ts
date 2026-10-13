@@ -51,7 +51,7 @@ describe("page changes", () => {
     expect(await status(cms.publishPageVersion(editor, id))).toBe(403);
     await cms.publishPageVersion(admin, id);
     expect((await getPublishedPage("about"))!.html).toContain("<strong>new</strong>");
-    const versions = await cms.pageVersions("about");
+    const versions = await cms.pageVersions(editor, "about");
     expect(versions.filter((v) => v.status === "published")).toHaveLength(1);
     expect(versions.some((v) => v.status === "superseded")).toBe(true);
   });

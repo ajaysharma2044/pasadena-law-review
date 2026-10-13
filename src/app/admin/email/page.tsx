@@ -1,10 +1,9 @@
-import { desc, inArray } from "drizzle-orm";
 import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin-nav";
-import { Flash, FormNav, Page, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
+import { AccessDenied, Flash, FormNav, Page, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
 import { getConfig } from "@/server/config";
-import { getDb } from "@/server/db/client";
-import { emailJobs } from "@/server/db/schema";
+import { listEmailJobs } from "@/server/services/admin";
+import { pageAccess } from "@/server/session";
 
 export const metadata: Metadata = { title: "Email" };
 
@@ -19,14 +18,10 @@ const STATUS_TEXT = {
 } as const;
 
 export default async function EmailPage({ searchParams }: { searchParams: SearchParams }) {
+  const access = await pageAccess("/admin/email", ["admin"]);
+  if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error, one } = await flashFrom(searchParams);
-  const problems = one("status") === "problem";
-  const jobs = await getDb()
-    .select({ id: emailJobs.id, kind: emailJobs.kind, toEmail: emailJobs.toEmail, subject: emailJobs.subject, status: emailJobs.status, attempts: emailJobs.attempts, lastError: emailJobs.lastError, updatedAt: emailJobs.updatedAt })
-    .from(emailJobs)
-    .where(problems ? inArray(emailJobs.status, ["failed", "bounced", "complained"]) : undefined)
-    .orderBy(desc(emailJobs.createdAt))
-    .limit(100);
+  const jobs = await listEmailJobs(access.actor, one("status") === "problem");
   const config = getConfig();
   return (
     <Page title="Email" wide>

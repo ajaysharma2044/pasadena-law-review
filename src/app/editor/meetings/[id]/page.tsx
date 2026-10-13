@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ManuscriptBody } from "@/components/manuscript-editor";
 import { EditorNav } from "@/components/editor-nav";
-import { Flash, FormNav, Page, flashFrom, type SearchParams } from "@/components/ui";
+import { AccessDenied, Flash, FormNav, Page, flashFrom, type SearchParams } from "@/components/ui";
 import { getMeeting, utcToLocalInput } from "@/server/services/cms";
-import { currentActor } from "@/server/session";
+import { pageAccess } from "@/server/session";
 
 export const metadata: Metadata = { title: "Meeting" };
 
@@ -12,10 +12,12 @@ type Props = { params: Promise<{ id: string }>; searchParams: SearchParams };
 
 export default async function MeetingForm({ params, searchParams }: Props) {
   const { id } = await params;
+  const access = await pageAccess(`/editor/meetings/${encodeURIComponent(id)}`, ["editor", "admin"]);
+  if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error } = await flashFrom(searchParams);
-  const actor = (await currentActor())!;
+  const actor = access.actor;
   const isNew = id === "new";
-  const m = isNew ? null : await getMeeting(id);
+  const m = isNew ? null : await getMeeting(actor, id);
   if (!isNew && !m) notFound();
   const tz = m?.timezone ?? "America/Los_Angeles";
   const isAdmin = actor.role === "admin";

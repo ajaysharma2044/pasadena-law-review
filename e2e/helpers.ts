@@ -37,5 +37,7 @@ export async function signUpAndVerify(page: Page, name: string, email: string, p
   const link = await mailboxLink(page, email, "/api/auth/verify-email");
   await page.goto(link);
   await expect(page.getByRole("heading", { name: "Email confirmed" })).toBeVisible();
+  // Confirming doesn't sign you in; that stays a separate step.
+  await expect(page.getByRole("main").getByRole("link", { name: "Sign in" })).toBeVisible();
   return password;
 }

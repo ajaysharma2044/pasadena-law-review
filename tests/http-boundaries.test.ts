@@ -10,8 +10,10 @@ import * as saveRoute from "@/app/api/manuscripts/[id]/route";
 import * as uploadRoute from "@/app/api/manuscripts/[id]/attachments/route";
 import * as submitRoute from "@/app/api/manuscripts/[id]/submit/route";
 import * as previewRoute from "@/app/api/preview/route";
+import * as signInRoute from "@/app/api/session/sign-in/route";
+import { redirectTo, safePath } from "@/server/http";
 import { call, setupApp } from "./helpers/app";
-import { makeUser } from "./helpers/users";
+import { PASSWORD, makeUser } from "./helpers/users";
 
 const SECRET = "s".repeat(32);
 let handle: Awaited<ReturnType<typeof setupApp>>;
@@ -94,5 +96,30 @@ describe("direct requests across ownership and role boundaries", () => {
     expect((await call(jobsRoute, "POST", "/api/jobs/run", { origin: null })).status).toBe(401);
     expect((await call(jobsRoute, "POST", "/api/jobs/run", { origin: null, headers: { authorization: `Bearer ${"x".repeat(32)}` } })).status).toBe(401);
     expect((await call(jobsRoute, "POST", "/api/jobs/run", { origin: null, headers: { authorization: `Bearer ${SECRET}` } })).status).toBe(200);
+  });
+});
+
+describe("redirect targets", () => {
+  const OFFSITE = ["//evil.example", "/.//evil.example", "/%2e//evil.example", "/%2E%2E//evil.example", "/./\\evil.example", "/\\evil.example", "https://evil.example/x", "/..//evil.example"];
+
+  it("never leaves the site, however the path is written", () => {
+    for (const p of OFFSITE) {
+      expect(safePath(p, "/fallback"), p).toBe("/fallback");
+      const location = redirectTo(p).headers.get("location")!;
+      expect(location.startsWith("/") && !location.startsWith("//") && !location.includes("\\"), `${p} -> ${location}`).toBe(true);
+    }
+    expect(safePath("/manuscripts/abc?x=1#y", "/f")).toBe("/manuscripts/abc?x=1#y");
+  });
+
+  it("sends someone who signs in through a doctored link to their dashboard instead", async () => {
+    await makeUser("rex@example.org");
+    for (const next of OFFSITE) {
+      const res = await call(signInRoute, "POST", "/api/session/sign-in", {
+        form: { email: "rex@example.org", password: PASSWORD, _next: next },
+        headers: { accept: "text/html" },
+      });
+      expect(res.status, next).toBe(303);
+      expect(res.headers.get("location"), next).toBe("/dashboard");
+    }
   });
 });

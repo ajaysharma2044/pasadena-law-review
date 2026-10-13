@@ -32,10 +32,22 @@ export async function readInput(req: Request): Promise<Input> {
   return {};
 }
 
-/** Accepts only same-site relative paths, so redirects can't be pointed at another site. */
+const LOCAL_ORIGIN = "http://local.invalid";
+
+/**
+ * Accepts only same-site paths, so redirects can't be pointed at another site. The path is judged after
+ * URL parsing, because dot-segments and encodings can turn "/.//evil.example" into "//evil.example".
+ */
 export function safePath(p: string | null | undefined, fallback: string): string {
   if (!p || !p.startsWith("/") || p.startsWith("//") || p.includes("\\")) return fallback;
-  return p;
+  let url: URL;
+  try {
+    url = new URL(p, LOCAL_ORIGIN);
+  } catch {
+    return fallback;
+  }
+  if (url.origin !== LOCAL_ORIGIN || url.pathname.startsWith("//")) return fallback;
+  return url.pathname + url.search + url.hash;
 }
 
 /** Browser form submissions ask for HTML and get redirects; scripts get JSON and status codes. */
@@ -43,7 +55,10 @@ export const wantsHtml = (req: Request) => (req.headers.get("accept") ?? "").inc
 const isForm = wantsHtml;
 
 export function redirectTo(path: string, params: Record<string, string> = {}, extraHeaders?: Headers) {
-  const url = new URL(path, getConfig().appUrl);
+  const base = new URL(getConfig().appUrl);
+  let url = new URL(path, base);
+  // The Location is sent as a path, so it must neither leave the site nor start with "//" (another host).
+  if (url.origin !== base.origin || url.pathname.startsWith("//")) url = new URL("/", base);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   const headers = new Headers(extraHeaders);
   headers.set("Location", url.pathname + url.search + url.hash);

@@ -1,5 +1,5 @@
 import { and, asc, eq, ilike, ne, or, sql, type SQL } from "drizzle-orm";
-import type { Actor, Role } from "../actor";
+import { assertRole, type Actor, type Role } from "../actor";
 import { audit } from "../audit";
 import { getDb, type DB, type Tx } from "../db/client";
 import { authorProfiles, memberships, session, user } from "../db/schema";
@@ -95,7 +95,8 @@ export async function bootstrapAdmin(db: DB, email: string) {
   });
 }
 
-export async function listMembers(filters: { q?: string; role?: string; status?: string }) {
+export async function listMembers(actor: Actor, filters: { q?: string; role?: string; status?: string }) {
+  assertRole(actor, ["admin"]);
   const conds: SQL[] = [];
   if (filters.q?.trim()) {
     const q = `%${filters.q.trim().replace(/[%_]/g, "")}%`;
@@ -125,7 +126,8 @@ export async function listMembers(filters: { q?: string; role?: string; status?:
     .limit(200);
 }
 
-export async function listEditors() {
+export async function listEditors(actor: Actor) {
+  assertRole(actor, ["admin"]);
   return getDb()
     .select({ id: user.id, name: user.name, email: user.email, role: memberships.role })
     .from(user)

@@ -10,6 +10,7 @@ let manuscriptUrl = "";
 test.describe.serial("worked traces", () => {
   test("Trace 1: an author signs up, verifies, submits and gets a receipt", async ({ page }) => {
     authorPassword = await signUpAndVerify(page, AUTHOR.name, AUTHOR.email);
+    await signIn(page, AUTHOR.email, authorPassword);
     await page.goto("/dashboard");
     await page.getByRole("link", { name: "Start a submission" }).click();
     await page.getByLabel(/Proposal\./).check();
@@ -128,6 +129,7 @@ test.describe.serial("worked traces", () => {
   test("Trace 3: a declined applicant and a revoked editor are refused, including direct requests", async ({ page }) => {
     const applicant = { name: "Riley Applicant", email: "riley@applicant.test" };
     const pw = await signUpAndVerify(page, applicant.name, applicant.email);
+    await signIn(page, applicant.email, pw);
     await page.goto("/account/apply");
     await page.getByLabel("Why do you want to edit for the Review?").fill("I edited my high school paper.");
     await page.getByRole("button", { name: "Send application" }).click();
