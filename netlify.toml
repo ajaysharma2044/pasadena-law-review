@@ -1,4 +1,5 @@
-# Netlify builds the app with its Next.js runtime (detected automatically).
+# Netlify builds the app with its Next.js runtime (the OpenNext adapter), declared below. The
+# sites were first created from a branch without Next.js, so Netlify didn't detect it on its own.
 # Migrations run during the build against the direct (unpooled) database connection.
 [build]
   command = "npm run db:migrate && npm run build"
@@ -9,3 +10,6 @@
 
 [functions]
   directory = "netlify/functions"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
