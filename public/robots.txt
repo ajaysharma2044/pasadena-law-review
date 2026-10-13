@@ -1,0 +1,12 @@
+User-agent: *
+Disallow: /account
+Disallow: /dashboard
+Disallow: /manuscripts
+Disallow: /editor
+Disallow: /admin
+Disallow: /api
+Disallow: /dev
+Disallow: /signin
+Disallow: /signup
+Disallow: /reset-password
+Disallow: /forgot-password
