@@ -163,7 +163,7 @@ Each stage is complete only when every check below has been run and recorded in 
 - [ ] The same backup and restore on staging. **Pending:** hosting.
 
 **S8: handoff**
-- [x] Pull request opened with evidence.
+- [ ] Pull request opened with evidence. **Pending:** GitHub refused the push because this machine's GitHub CLI login lacks the `workflow` scope, which pushing `.github/workflows/ci.yml` requires. The owner grants it once with `gh auth refresh -h github.com -s workflow`.
 - [x] Launch checklist and smoke-test commands (`deployment.md`).
 - [x] `docs/manual_todo.md` lists owner actions in dependency order.
 - [x] Handoff document written.
