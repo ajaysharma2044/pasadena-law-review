@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { DevBanner, SiteFooter, SiteHeader } from "@/components/chrome";
+import { isAdmin, isEditor } from "@/server/actor";
 import { getConfig } from "@/server/config";
+import { currentActor } from "@/server/session";
 import { getSettings } from "@/server/services/settings";
 import "./journal.css";
 
@@ -21,7 +23,41 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const [settings, config] = [await getSettings(), getConfig()];
+  const [settings, config, actor] = [await getSettings(), getConfig(), await currentActor().catch(() => null)];
+  const accountLinks = actor ? (
+    <>
+      <li>
+        <Link href="/dashboard">Dashboard</Link>
+      </li>
+      {isEditor(actor) ? (
+        <li>
+          <Link href="/editor">Editor</Link>
+        </li>
+      ) : null}
+      {isAdmin(actor) ? (
+        <li>
+          <Link href="/admin">Admin</Link>
+        </li>
+      ) : null}
+      <li>
+        <Link href="/account">Account</Link>
+      </li>
+      <li>
+        <form method="post" action="/api/session/sign-out">
+          <button type="submit">Sign out</button>
+        </form>
+      </li>
+    </>
+  ) : (
+    <>
+      <li>
+        <Link href="/signin">Sign in</Link>
+      </li>
+      <li>
+        <Link href="/signup">Sign up</Link>
+      </li>
+    </>
+  );
   return (
     <html lang="en">
       <head>
@@ -36,11 +72,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <DevBanner mode={config.mode} />
         <SiteHeader
           settings={settings}
-          accountLinks={
-            <li>
-              <Link href="/signin">Sign in</Link>
-            </li>
-          }
+          accountLinks={accountLinks}
         />
         {children}
         <SiteFooter settings={settings} />
