@@ -11,7 +11,7 @@ export default async function JournalPage() {
       <div className="page-head narrow">
         <h1>The Journal</h1>
         <p>
-          The Review publishes one volume each academic year, with a number each term. Short replies and meeting minutes
+          The Journal publishes one volume each academic year, with a number each term. Short replies and meeting minutes
           appear in the <Link href="/forum">Forum</Link>.
         </p>
       </div>

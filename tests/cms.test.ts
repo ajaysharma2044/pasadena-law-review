@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { getDb } from "@/server/db/client";
 import * as s from "@/server/db/schema";
 import { AppError } from "@/server/errors";
-import { seedContent, ARTICLE_TITLE } from "@/server/seed/content";
+import { seedContent, ARTICLE_TITLE, PAGES_V1 } from "@/server/seed/content";
 import * as cms from "@/server/services/cms";
 import { getNextMeeting, getPublishedMasthead, getPublishedPage, listLive, listVisibleIssues } from "@/server/services/public-content";
 import { getSettings } from "@/server/services/settings";
@@ -23,6 +23,26 @@ const status = (p: Promise<unknown>) =>
   );
 
 describe("original content seed", () => {
+  it("renames pages still showing the original text, and leaves edited pages alone", async () => {
+    await seedContent(getDb());
+    const db = getDb();
+    // Simulate a site seeded before the rename: About and Submissions still show the original text.
+    for (const key of ["about", "submissions"]) {
+      await db.update(s.cmsPageVersions).set({ status: "superseded" }).where(eq(s.cmsPageVersions.pageKey, key));
+      await db.insert(s.cmsPageVersions).values({ pageKey: key, bodyMd: PAGES_V1[key], status: "published", decidedAt: new Date() });
+    }
+    // An editor's own text on the Meetings page must survive.
+    await db.update(s.cmsPageVersions).set({ status: "superseded" }).where(eq(s.cmsPageVersions.pageKey, "meetings_intro"));
+    await db.insert(s.cmsPageVersions).values({ pageKey: "meetings_intro", bodyMd: "Our own words about the Review.", status: "published", decidedAt: new Date() });
+
+    expect(await seedContent(db)).toEqual({ seeded: false, renamed: 2 });
+    expect((await getPublishedPage("about"))!.html).toContain("The Pasadena City College Law Journal is a student journal");
+    expect((await getPublishedPage("submissions"))!.html).toContain("The Journal publishes");
+    expect((await getPublishedPage("meetings_intro"))!.html).toContain("Our own words about the Review.");
+    expect(await seedContent(db)).toEqual({ seeded: false, renamed: 0 });
+    expect((await getSettings()).publication_name).toBe("Pasadena City College Law Journal");
+  });
+
   it("imports the article as unpublished with open checks, hides the planned issue, and is idempotent", async () => {
     expect((await seedContent(getDb())).seeded).toBe(true);
     expect((await seedContent(getDb())).seeded).toBe(false);

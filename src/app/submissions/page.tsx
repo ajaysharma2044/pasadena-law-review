@@ -18,7 +18,7 @@ export default async function SubmissionsPage() {
               <Link href="/signup">create an account</Link> first.
             </>
           ) : (
-            "The Review is not reading new submissions right now."
+            "The Journal is not reading new submissions right now."
           )}
           {settings.submission_deadline_note ? ` ${settings.submission_deadline_note}` : ""}
         </p>

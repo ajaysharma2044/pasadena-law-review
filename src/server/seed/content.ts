@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { DB } from "../db/client";
 import * as s from "../db/schema";
 
@@ -63,7 +63,8 @@ export const ARTICLE_CHECKS = [
   "PCC’s own AP 5520 and academic-integrity policy cited by number",
 ];
 
-const PAGES: Record<string, string> = {
+// Page text as first imported from the static site, under the publication's original name.
+export const PAGES_V1: Record<string, string> = {
   about: `The Pasadena Law & Policy Review is a student journal at Pasadena City College. It publishes essays, policy proposals, and notes by PCC students on law and public policy, and its members meet in person to debate them.
 
 Law reviews are usually edited by law students. This one is edited by community college students, and much of what it covers concerns the rules that govern PCC and the other California community colleges.`,
@@ -116,9 +117,42 @@ Come a few minutes early and sit anywhere. You can speak from the floor or just 
 Send the editors one sentence that begins “Resolved, That,” with a line on why it deserves an hour. Motions about PCC’s own rules, and about the California law that governs community colleges, get priority.`,
 };
 
+export const PUBLICATION_NAME = "Pasadena City College Law Journal";
+
+/** The original page text under the current name. */
+const renamed = (text: string) =>
+  text
+    .replaceAll("The Pasadena Law & Policy Review", `The ${PUBLICATION_NAME}`)
+    .replaceAll("The Review", "The Journal")
+    .replaceAll("the Review", "the Journal");
+
+const PAGES: Record<string, string> = Object.fromEntries(Object.entries(PAGES_V1).map(([k, v]) => [k, renamed(v)]));
+
+/**
+ * Pages still showing the untouched original text get the renamed text as a new published version.
+ * Pages anyone has edited are left alone. Safe to run on every build.
+ */
+async function renameUntouchedPages(db: DB) {
+  let renamedCount = 0;
+  for (const [pageKey, original] of Object.entries(PAGES_V1)) {
+    await db.transaction(async (tx) => {
+      const [live] = await tx
+        .select()
+        .from(s.cmsPageVersions)
+        .where(and(eq(s.cmsPageVersions.pageKey, pageKey), eq(s.cmsPageVersions.status, "published")))
+        .for("update");
+      if (!live || live.bodyMd !== original || PAGES[pageKey] === original) return;
+      await tx.update(s.cmsPageVersions).set({ status: "superseded" }).where(eq(s.cmsPageVersions.id, live.id));
+      await tx.insert(s.cmsPageVersions).values({ pageKey, bodyMd: PAGES[pageKey], status: "published", note: `Renamed to ${PUBLICATION_NAME}`, decidedAt: new Date() });
+      renamedCount += 1;
+    });
+  }
+  return renamedCount;
+}
+
 export async function seedContent(db: DB) {
   const [done] = await db.select().from(s.siteSettings).where(eq(s.siteSettings.key, SEED_MARKER));
-  if (done) return { seeded: false };
+  if (done) return { seeded: false, renamed: await renameUntouchedPages(db) };
 
   await db.transaction(async (tx) => {
     for (const [pageKey, bodyMd] of Object.entries(PAGES)) {
@@ -177,5 +211,5 @@ export async function seedContent(db: DB) {
     await tx.insert(s.auditEvents).values({ action: "seed.content", targetType: "system", targetId: SEED_MARKER, metadata: {} });
     await tx.insert(s.siteSettings).values({ key: SEED_MARKER, value: { at: new Date().toISOString() } });
   });
-  return { seeded: true };
+  return { seeded: true, renamed: 0 };
 }

@@ -34,7 +34,7 @@ Status: **prepared, not deployed.** No Netlify site, database, email provider or
    | `BETTER_AUTH_SECRET` | 32+ random characters: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
    | `EMAIL_TRANSPORT` | `resend` |
    | `RESEND_API_KEY` | From Resend (see `email-setup.md`) |
-   | `EMAIL_FROM` | e.g. `The Pasadena Law & Policy Review <editors@mail.your-domain.org>` on the verified domain |
+   | `EMAIL_FROM` | e.g. `Pasadena City College Law Journal <editors@mail.your-domain.org>` on the verified domain |
    | `EMAIL_REPLY_TO` | The editors' real inbox (optional) |
    | `RESEND_WEBHOOK_SECRET` | From the Resend webhook you create (optional but recommended) |
    | `STORAGE_DRIVER` | `netlify-blobs` |

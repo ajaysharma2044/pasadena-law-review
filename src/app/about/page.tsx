@@ -15,7 +15,7 @@ export default async function AboutPage() {
   return (
     <main id="content">
       <div className="page-head narrow">
-        <h1>About the Review</h1>
+        <h1>About the Journal</h1>
       </div>
       <div className="page narrow">
         <div className="prose">

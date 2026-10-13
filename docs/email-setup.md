@@ -47,7 +47,7 @@ Emails carry a status summary and a link back to the site. They never include ma
    - Start with a monitoring-only policy, then tighten it once reports show mail passing.
    - Follow Resend's DMARC guidance for the record value.
 6. **Create an API key** with sending access only. Put it in Netlify as `RESEND_API_KEY`.
-7. **Set the sender** `EMAIL_FROM` to an address on the verified domain, e.g. `The Pasadena Law & Policy Review <editors@mail.your-domain.org>`.
+7. **Set the sender** `EMAIL_FROM` to an address on the verified domain, e.g. `Pasadena City College Law Journal <editors@mail.your-domain.org>`.
    - Set `EMAIL_REPLY_TO` to the inbox the editors actually read.
    - The public contact address on the site is a separate setting (Admin → Settings).
 8. **Webhook (recommended)** so the site can show Delivered and Bounced:

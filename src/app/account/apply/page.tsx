@@ -17,7 +17,7 @@ export default async function ApplyPage({ searchParams }: { searchParams: Search
       <form className="form" method="post" action="/api/account/applications">
         <FormNav back="/account/apply" next="/account" />
         <div className="field">
-          <label htmlFor="statement">Why do you want to edit for the Review?</label>
+          <label htmlFor="statement">Why do you want to edit for the Journal?</label>
           <textarea id="statement" name="statement" required maxLength={4000} />
         </div>
         <div className="field">

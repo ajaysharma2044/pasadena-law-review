@@ -19,7 +19,7 @@ function build() {
   const config = getConfig();
   const db = getDb();
   return betterAuth({
-    appName: "Pasadena Law & Policy Review",
+    appName: "Pasadena City College Law Journal",
     baseURL: config.appUrl,
     basePath: "/api/auth",
     secret: config.authSecret,

@@ -1,4 +1,4 @@
-# Project spec: Pasadena Law & Policy Review application
+# Project spec: Pasadena City College Law Journal application
 
 ## 1. Goal
 
