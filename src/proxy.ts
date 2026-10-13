@@ -5,7 +5,6 @@ export function proxy(request: NextRequest) {
   // btoa rather than Buffer: on Netlify the proxy runs as an Edge Function.
   const nonce = btoa(crypto.randomUUID());
   const isDev = process.env.NODE_ENV === "development";
-  const secure = request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto") === "https";
   const csp = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
@@ -19,7 +18,9 @@ export function proxy(request: NextRequest) {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    ...(secure ? ["upgrade-insecure-requests"] : []),
+    // No upgrade-insecure-requests: on a new custom domain, plain-http pages are served before the
+    // HTTPS certificate exists, and upgrading their stylesheets to https broke them. Netlify's
+    // redirect to HTTPS, plus HSTS, keeps visitors on HTTPS once the certificate is issued.
   ].join("; ");
 
   const requestHeaders = new Headers(request.headers);
