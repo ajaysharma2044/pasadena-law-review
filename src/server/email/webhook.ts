@@ -27,10 +27,13 @@ export function verifySignature(secret: string, headers: Headers, rawBody: strin
 }
 
 const FINAL = new Set(["delivered", "bounced", "complained", "failed"]);
-const MAP: Record<string, "delivered" | "bounced" | "complained" | undefined> = {
+// https://resend.com/docs/webhooks/event-types (other events, e.g. email.delivery_delayed, are only recorded)
+const MAP: Record<string, "delivered" | "bounced" | "complained" | "failed" | undefined> = {
   "email.delivered": "delivered",
   "email.bounced": "bounced",
   "email.complained": "complained",
+  "email.failed": "failed",
+  "email.suppressed": "failed",
 };
 
 /** Records one verified event. Replays (same svix-id) are ignored. Statuses only move forward. */

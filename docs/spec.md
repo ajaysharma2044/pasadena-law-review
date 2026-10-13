@@ -95,76 +95,87 @@ Turn the static site into a working publication. Specifically:
 
 Each stage is complete only when every check below has been run and recorded in `docs/verification.md`.
 
+- `[x]`: verified, with evidence in `verification.md`.
+- `[ ]`: not done, with the reason given.
+
 **S0: audit and design**
-- [ ] `docs/repo-audit.md`, `docs/spec.md` and `docs/DESIGN.md` committed.
-- [ ] The architecture matches the infrastructure that actually exists (no assumed credentials).
-- [ ] No source was replaced without explanation.
+- [x] `docs/repo-audit.md`, `docs/spec.md` and `docs/DESIGN.md` committed.
+- [x] The architecture matches the infrastructure that actually exists (no assumed credentials).
+- [x] No source was replaced without explanation. `site/` is untouched. The old README moved to `docs/static-site-notes.md`.
 
 **S1: foundation**
-- [ ] `npm ci`, `npm run build` and `npm start` work from a clean checkout.
-- [ ] Migrations apply to an empty database (PGlite and the `pg` driver path).
-- [ ] `/api/health` reports the database as up.
-- [ ] Public routes render with the original typography.
-- [ ] Old `.html` URLs redirect.
-- [ ] Production refuses to start with missing configuration (tested).
-- [ ] CI workflow committed.
+- [x] `npm ci`, `npm run build` and `npm start` work from a clean checkout.
+- [x] Migrations apply to an empty database (PGlite and the `pg` driver path).
+- [x] `/api/health` reports the database as up.
+- [x] Public routes render with the original typography.
+- [x] Old `.html` URLs redirect.
+- [x] Production refuses to start with missing configuration (tested).
+- [x] CI workflow committed. Its first GitHub run happens when the branch is pushed.
 
 **S2: accounts and permissions**
-- [ ] Tests written first, then passing: sign-up grants only `member`; request bodies, profile updates and email domains cannot grant privilege.
-- [ ] Anonymous and unverified requests to private endpoints are denied.
-- [ ] Verification and reset tokens expire and cannot be replayed; reset revokes sessions.
-- [ ] Suspension and role revocation take effect on the next request.
-- [ ] The last active admin cannot be demoted or suspended.
-- [ ] Application approve/decline works and is audited.
-- [ ] Admin bootstrap refuses when an admin already exists.
-- [ ] No secrets are committed.
+- [x] Tests written first, then passing: sign-up grants only `member`; request bodies, profile updates and email domains cannot grant privilege.
+- [x] Anonymous and unverified requests to private endpoints are denied.
+- [x] Verification and reset tokens expire and cannot be replayed; reset revokes sessions.
+- [x] Suspension and role revocation take effect on the next request.
+- [x] The last active admin cannot be demoted or suspended.
+- [x] Application approve/decline works and is audited.
+- [x] Admin bootstrap refuses when an admin already exists.
+- [x] No secrets are committed.
 
 **S3: author submissions**
-- [ ] A complete author journey passes: draft, save, preview, submit, receipt, status, revise, resubmit, withdraw.
-- [ ] Another author cannot read, change or download the work (direct requests tested).
-- [ ] Drafts never appear in public routes.
-- [ ] Uploads are validated by content; executables and macro documents are refused.
+- [x] A complete author journey passes: draft, save, preview, submit, receipt, status, revise, resubmit, withdraw.
+- [x] Another author cannot read, change or download the work (direct requests tested).
+- [x] Drafts never appear in public routes.
+- [x] Uploads are validated by content; executables and macro documents are refused.
 
 **S4: review and decisions**
-- [ ] Invalid transitions return 409 or 422.
-- [ ] Self-review and self-decision are refused.
-- [ ] Acceptance requires two recommendations from two different non-author editors on the current revision.
-- [ ] Stale edits and stale decisions return a 409 Conflict with a usable message.
-- [ ] Internal notes never appear in author pages, author API responses or emails.
+- [x] Invalid transitions return 409 or 422.
+- [x] Self-review and self-decision are refused.
+- [x] Acceptance requires two recommendations from two different non-author editors on the current revision.
+- [x] Stale edits and stale decisions return a 409 Conflict with a usable message.
+- [x] Internal notes never appear in author pages, author API responses or emails.
 
 **S5: publication and CMS**
-- [ ] Publishing requires an accepted manuscript, a chosen revision and zero open checks.
-- [ ] Later edits do not change public text.
-- [ ] Unpublishing removes the piece from all public routes and indexes.
-- [ ] Restoring a previous version works.
-- [ ] Issue and Forum indexes list only live publications.
-- [ ] Footnote links work.
-- [ ] Page drafts don't change public pages until an admin publishes them.
-- [ ] Meetings show honest "not announced" states.
-- [ ] The masthead stays hidden until published.
+- [x] Publishing requires an accepted manuscript, a chosen revision and zero open checks.
+- [x] Later edits do not change public text.
+- [x] Unpublishing removes the piece from all public routes and indexes.
+- [x] Restoring a previous version works.
+- [x] Issue and Forum indexes list only live publications.
+- [x] Footnote links work.
+- [x] Page drafts don't change public pages until an admin publishes them.
+- [x] Meetings show honest "not announced" states.
+- [x] The masthead stays hidden until published.
 
 **S6: email**
-- [ ] Each event creates one job (idempotency).
-- [ ] Retry and backoff behave deterministically; final failure is recorded.
-- [ ] Webhook signature verification rejects tampered or stale payloads.
-- [ ] The development mailbox shows messages and cannot run in production.
-- [ ] Live delivery to an owner-specified test address — **pending until credentials and DNS exist**.
+- [x] Each event creates one job (idempotency).
+- [x] Retry and backoff behave deterministically; final failure is recorded.
+- [x] Webhook signature verification rejects tampered or stale payloads.
+- [x] The development mailbox shows messages and cannot run in production.
+- [ ] Live delivery to an owner-specified test address. **Pending:** it needs a Resend account, a verified domain and DNS (`manual_todo.md` §3).
 
 **S7: hardening**
-- [ ] Build and tests pass.
-- [ ] Accessibility checks pass: one `h1`, landmarks, labels, focus, contrast, no horizontal scroll at 320/375/768/1440.
-- [ ] Security headers present.
-- [ ] Private routes are `noindex`.
-- [ ] `npm audit` findings are recorded.
-- [ ] Backup and restore of database and storage are documented. They have been exercised locally; staging is pending hosting.
+- [x] Build and tests pass.
+- [x] Accessibility checks pass: one `h1`, landmarks, labels, focus, contrast, no horizontal scroll at 320/375/768/1440.
+- [x] Security headers present.
+- [x] Private routes are `noindex`.
+- [x] `npm audit` findings are recorded.
+- [x] Backup and restore of the database and storage are documented and exercised locally.
+- [ ] The same backup and restore on staging. **Pending:** hosting.
 
 **S8: handoff**
-- [ ] Pull request opened with evidence.
-- [ ] Launch checklist and smoke-test commands.
-- [ ] `docs/manual_todo.md` lists owner actions in dependency order.
-- [ ] Handoff document written.
+- [x] Pull request opened with evidence.
+- [x] Launch checklist and smoke-test commands (`deployment.md`).
+- [x] `docs/manual_todo.md` lists owner actions in dependency order.
+- [x] Handoff document written.
+- [ ] Verified staging deployment. **Pending:** a Netlify site, Neon database and secrets (`manual_todo.md` §2).
 
-## 7. Known limitations (updated as found)
+## 7. Known limitations
 
-- No hosting, database, email or storage credentials exist in this environment. Staging deployment and live email are pending owner setup.
-- The editor is Markdown with a toolbar, not WYSIWYG.
+- **No hosting, database, email or storage credentials existed in this environment.** Staging deployment, live email and cloud backups are pending owner setup.
+- **The editor is Markdown with a toolbar and preview,** not WYSIWYG.
+- **Account deletion and data export** are handled by an administrator on request (`operations.md`). They're not self-service.
+- **Search** is limited to the queue filters, the issue index and the Forum.
+- **Resend's webhook field for the message id** (`data.email_id`) is confirmed only by the first live event (`email-setup.md`).
+- **Per-IP rate limits** depend on one trusted header (`TRUSTED_IP_HEADER`, Netlify's by default). On another host it must be set to that proxy's header; otherwise every visitor shares one per-IP limit. Per-email limits apply either way.
+- **PGlite (development only) is bundled into the server function.** This adds size but never runs in production.
+- **Not measured:** Lighthouse performance, and real-device testing beyond Chrome at four widths.

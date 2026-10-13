@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /** Per-request CSP nonce (pages are dynamically rendered, so Next.js applies it to its scripts). */
 export function proxy(request: NextRequest) {
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  // btoa rather than Buffer: on Netlify the proxy runs as an Edge Function.
+  const nonce = btoa(crypto.randomUUID());
   const isDev = process.env.NODE_ENV === "development";
   const secure = request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto") === "https";
   const csp = [

@@ -4,7 +4,9 @@ import { runMigrations } from "../src/server/db/migrate";
 
 // Migrations use the direct (unpooled) connection when Netlify DB provides one.
 const env = { ...process.env };
-if (env.NETLIFY_DATABASE_URL_UNPOOLED && !env.DATABASE_URL) env.DATABASE_URL = env.NETLIFY_DATABASE_URL_UNPOOLED;
+// Prefer a direct (unpooled) connection for operator scripts when one is provided.
+const direct = env.DATABASE_URL_UNPOOLED ?? env.NETLIFY_DATABASE_URL_UNPOOLED;
+if (direct) env.DATABASE_URL = direct;
 const config = loadConfig(env);
 const handle = createDatabase(config.database);
 await runMigrations(handle.db, handle.kind);

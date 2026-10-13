@@ -1,6 +1,6 @@
 # Design: Pasadena Law & Policy Review application
 
-Status: S0 design, written before implementation. Sections marked *(verify)* are confirmed against the installed library during the stage that implements them.
+Status: written at S0, updated at S8 to match what was built. Hosting is Netlify (§16).
 
 ## 1. Architecture summary
 
@@ -17,7 +17,7 @@ Why this stack (the repository had no backend to reuse):
 - No database, Docker or hosting CLI exists locally. PGlite (Postgres compiled to WebAssembly) gives real Postgres semantics for local development and tests without Docker.
 - Production uses any managed Postgres through `DATABASE_URL`. The same SQL migrations run on both.
 - Better Auth avoids hand-rolled password hashing, tokens and sessions, and it supports database-backed sessions that can be revoked immediately.
-- The application is host-agnostic: `next build && next start` on a Node host, or a platform that runs Next.js. Hosting is an owner decision (`manual_todo.md`).
+- The application doesn't depend on its host: `next build && next start` works on any Node host. The owner chose Netlify (§16).
 
 ## 2. Runtime and dependencies
 
@@ -38,12 +38,13 @@ Why this stack (the repository had no backend to reuse):
 | **Browser** | Server-rendered HTML. Small client components only for: the manuscript editor toolbar, the unsaved-changes guard, the preview toggle and confirmation dialogs. No authorization decisions and no secrets. Forms post to same-origin route handlers and work without JavaScript where practical. |
 | **Server** (Next.js route handlers and server components) | Session resolution, authorization, validation, state transitions, rendering, outbox writes, storage access, rate limits. Every mutation is a `POST`/`PATCH`/`DELETE` route handler under `/api` that calls the service layer. |
 | **Database** (Postgres) | Constraints, foreign keys, unique indexes, immutability triggers on revisions and published versions, transactional state changes. |
-| **Background work** | The email dispatcher runs after the commit (`after()`) and through a job runner. The runner is `POST /api/jobs/run`, protected by `CRON_SECRET` for platform cron, plus `npm run jobs:run` for a worker or cron host. It is idempotent, and rows are locked with `FOR UPDATE SKIP LOCKED`, so concurrent runners don't double-send. |
+| **Background work** | The email dispatcher runs after the commit (`after()`) and through a job runner. The runner is `POST /api/jobs/run`, protected by `CRON_SECRET` and called every 5 minutes by a Netlify Scheduled Function; `npm run jobs:run` does the same from an operator's machine. It is idempotent, and rows are locked with `FOR UPDATE SKIP LOCKED`, so concurrent runners don't double-send. |
 
-## 4. Authentication and sessions *(verify against Better Auth 1.7)*
+## 4. Authentication and sessions
 
 - **Account:** email and password. Minimum 10 characters. Sign-up requires `name`, `email` and `password`.
 - **Verification:** required before sign-in. Better Auth sends verification and reset links through our email adapter (the outbox). Verification links expire (1 hour). Resending the link is rate-limited.
+  - Opening the link confirms the address but **doesn't sign anyone in**. Otherwise someone who opened another person's link would end up working in that person's account.
 - **Password reset:** expiring, single-use tokens. All of the user's sessions are revoked on reset.
 - **Sessions:** stored in the database. The cookie is `HttpOnly`, `SameSite=Lax`, and `Secure` in production. The cookie cache is **off**, so deleting a session ends access on the next request.
 - **Suspension:** sets `memberships.status = 'suspended'` and deletes the user's sessions.
@@ -53,8 +54,11 @@ Why this stack (the repository had no backend to reuse):
 ## 5. Authorization
 
 - `getActor(headers)` resolves the session, then loads `memberships` (role, status) and `emailVerified`.
-- Services receive the actor and call policy functions (`src/server/policy.ts`). The client never supplies a role, owner, author, state or file path.
-- **Roles:** `member` (author), `editor`, `admin`. **Statuses:** `active`, `suspended`. **Unverified accounts** can only verify, resend and recover.
+- Route handlers call `requireActor(headers, roles)` (`src/server/actor.ts`); services check ownership, assignment and state themselves. The client never supplies a role, owner, author, state or file path.
+- **Every page checks access itself** with `pageAccess()`. A layout's check isn't enough: on a client-side navigation, Next.js can render a page without re-running its layout. Services that read private lists also call `assertRole()`, so a page that forgot its check would still get nothing. Regression test: `e2e/http.spec.ts`, "page-level access on client navigations".
+- **Never-submitted pieces** (drafts, including drafts withdrawn unsent) are private to their authors, along with their files.
+- **No acting on your own work:** an administrator can't decide on, publish, unpublish, restore, or manage the publication checks of a piece they wrote.
+- **Roles:** `member` (author), `editor`, `admin`. **Statuses:** `active`, `pending` (only when an administrator turns on approval for new accounts), `suspended`. **Unverified accounts** can only verify, resend and recover.
 - **Admin access** is granted only by an existing active admin (audited), or by the operator CLI `npm run admin:bootstrap`, which works only while no active admin exists. No web endpoint promotes the first admin, and no credentials are hardcoded.
 - **Last admin protection:** demoting or suspending the last active admin is refused, inside a transaction.
 - **CSRF:** non-GET route handlers require an `Origin` header matching `APP_URL`. Cookies are `SameSite=Lax`. Better Auth's own endpoints use its trusted-origin checks.
@@ -145,9 +149,10 @@ All timestamps are `timestamptz` (UTC). Display uses the configured publication 
   - The extension must match. Everything else is refused, including executables and macro-enabled `.docm`.
   - Stored under a random key, never under the user-supplied name. The filename is sanitized for display only.
 - **Drivers:**
+  - `netlify-blobs`: the production choice on Netlify. A site-private store with strong consistency.
   - `local`: a directory outside the web root. For development and tests, or a single-instance host with a persistent volume.
   - `s3`: any S3-compatible bucket (AWS S3, Cloudflare R2, Supabase Storage). The bucket must be private.
-- **Downloads:** go through `GET /api/attachments/:id`. The route authorizes the request, then streams the file (`local`) or redirects to a presigned URL valid for 60 seconds (`s3`).
+- **Downloads:** go through `GET /api/attachments/:id`. The route authorizes the request, then streams the file (`local`, `netlify-blobs`) with `Content-Disposition: attachment`, or redirects to a presigned URL valid for 60 seconds (`s3`).
 - **Uploads are rate-limited.** Documents are never parsed or rendered on the server.
 
 ## 11. Rendering and sanitization
@@ -172,11 +177,14 @@ All timestamps are `timestamptz` (UTC). Display uses the configured publication 
   - `Permissions-Policy` (minimal)
   - HSTS in production
 - **Indexing:** private routes send `noindex` and are disallowed in `robots.txt`.
+- **Redirects after a form or sign-in** go only to same-site paths. The target is checked after URL parsing, so tricks like `/.//evil.example` fall back to a safe page.
 - **Rate limits:**
-  - Better Auth's limits (database storage) for sign-in, sign-up, verification resend and reset.
-  - Application limits (database) for submissions, uploads and applications.
+  - Better Auth's own limiter is off. The wrapper routes under `/api/session/*` apply database-backed limits per IP and per email to sign-in, sign-up, verification resend and reset.
+  - The IP address comes only from `TRUSTED_IP_HEADER`, which defaults to Netlify's `x-nf-client-connection-ip`. Other forwarding headers are client-controlled and ignored.
+  - The same limiter covers submissions, uploads and applications.
+  - Limits are on by default. `RATE_LIMITS=off` exists for automated tests, and production refuses it.
 - **No server-side fetching of submitted URLs.**
-- **Secrets:** read only on the server through `src/server/config.ts`. Never imported into client components (the `server-only` package enforces this).
+- **Secrets:** read only on the server through `src/server/config.ts`. The two client components (`manuscript-editor.tsx`, `error.tsx`) import nothing from `src/server`.
 
 ## 13. Configuration and failure modes
 
@@ -201,7 +209,7 @@ All timestamps are `timestamptz` (UTC). Display uses the configured publication 
   - CMS pages from the original copy
   - the original article as an **unpublished** manuscript with open publication checks
   - a draft meeting with the proposed motion and no date
-- `npm run db:seed:demo`: synthetic demo accounts and manuscripts, refused when `NODE_ENV=production`.
+- `npm run db:seed:demo`: synthetic demo accounts (`@demo.test` addresses) for local testing. Refused in production mode and against any database other than local PGlite.
 
 ## 15. Testing strategy
 
@@ -213,16 +221,21 @@ All timestamps are `timestamptz` (UTC). Display uses the configured publication 
 - **Route handlers are called directly** with real Better Auth sessions (sign-up, then verify, then sign-in), to test direct API requests without the UI.
 - **Playwright journeys** against a running server with an isolated PGlite directory and the development mailbox, plus screenshots at 320, 375, 768 and 1440px.
 
-## 16. Hosting
+## 16. Hosting (Netlify)
 
-The decision is pending the owner, and the app does not depend on it.
+The owner chose Netlify. Full steps are in `docs/deployment.md`.
 
-| Option | What it needs | Notes |
-|---|---|---|
-| **A: Node host with a persistent volume** (Render, Railway, Fly) | Managed Postgres, Resend, local storage on the volume, an in-process worker or cron | Fewest services. Single instance only if using local file storage. |
-| **B: Vercel + Neon + S3-compatible storage (R2) + Resend** | Several accounts | Serverless. Cron frequency on free plans is limited, so retries also run after each request. |
+| Piece | On Netlify |
+|---|---|
+| Pages, route handlers, auth | Netlify Functions through Netlify's Next.js adapter (OpenNext), installed automatically |
+| `src/proxy.ts` (CSP nonce) | Edge Function. It uses only web APIs (`crypto.randomUUID`, `btoa`) |
+| Database | Postgres through `DATABASE_URL`. Neon is recommended because Netlify's own database product requires a credit-based plan |
+| Attachments | Netlify Blobs (`STORAGE_DRIVER=netlify-blobs`) |
+| Email retries | `netlify/functions/email-retry.mts`, a Scheduled Function every 5 minutes (runs on published deploys only) |
+| Migrations | `npm run db:migrate` runs in the build command before `next build` |
 
-Both options need the owner to create accounts, add secrets on the host (never in Git), verify a sending domain (SPF, DKIM, DMARC from the provider's instructions), and run `npm run admin:bootstrap` once.
+- **Function time limits:** the job runner sends at most 10 emails per call.
+- **Owner setup:** the owner creates the accounts and adds secrets in Netlify's settings, never in Git. They also verify a sending domain (SPF, DKIM and DMARC records copied from Resend's dashboard) and run `npm run admin:bootstrap` once.
 
 ## 17. Pass/fail checks
 

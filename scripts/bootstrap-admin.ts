@@ -13,7 +13,9 @@ if (!email) {
   process.exit(1);
 }
 const env = { ...process.env };
-if (env.NETLIFY_DATABASE_URL_UNPOOLED && !env.DATABASE_URL) env.DATABASE_URL = env.NETLIFY_DATABASE_URL_UNPOOLED;
+// Prefer a direct (unpooled) connection for operator scripts when one is provided.
+const direct = env.DATABASE_URL_UNPOOLED ?? env.NETLIFY_DATABASE_URL_UNPOOLED;
+if (direct) env.DATABASE_URL = direct;
 const handle = createDatabase(loadConfig(env).database);
 try {
   await bootstrapAdmin(handle.db, email);

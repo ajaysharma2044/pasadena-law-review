@@ -46,7 +46,7 @@ export async function enqueueEmail(db: Executor, email: OutgoingEmail): Promise<
 export async function processDueEmails(opts: { limit?: number; now?: Date } = {}) {
   const db = getDb();
   const now = opts.now ?? new Date();
-  const limit = opts.limit ?? 20;
+  const limit = opts.limit ?? 10;
 
   const claimed = await db.transaction(async (tx) => {
     const due = await tx
