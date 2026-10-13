@@ -1,7 +1,7 @@
 import { APIError } from "better-auth/api";
 import { getAuth } from "./auth";
 import { AppError } from "./errors";
-import { field, redirectTo, safePath, type Input } from "./http";
+import { field, redirectTo, safePath, wantsHtml, type Input } from "./http";
 import { clientIp, rateLimit } from "./ratelimit";
 
 /** Shared helpers for the /api/session/* wrappers around the auth library. */
@@ -35,9 +35,7 @@ export function withCookies(from: Response, to: Response) {
   return to;
 }
 
-export function isForm(req: Request) {
-  return (req.headers.get("content-type") ?? "").includes("form");
-}
+export const isForm = wantsHtml;
 
 export function done(req: Request, input: Input, notice: string, fallbackNext = "/") {
   return isForm(req) ? redirectTo(safePath(input._next, fallbackNext), { notice }) : Response.json({ ok: true, notice });

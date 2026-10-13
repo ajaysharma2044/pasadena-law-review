@@ -38,10 +38,9 @@ export function safePath(p: string | null | undefined, fallback: string): string
   return p;
 }
 
-const isForm = (req: Request) => {
-  const type = req.headers.get("content-type") ?? "";
-  return type.includes("application/x-www-form-urlencoded") || type.includes("multipart/form-data");
-};
+/** Browser form submissions ask for HTML and get redirects; scripts get JSON and status codes. */
+export const wantsHtml = (req: Request) => (req.headers.get("accept") ?? "").includes("text/html");
+const isForm = wantsHtml;
 
 export function redirectTo(path: string, params: Record<string, string> = {}, extraHeaders?: Headers) {
   const url = new URL(path, getConfig().appUrl);
