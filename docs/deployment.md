@@ -12,7 +12,7 @@ Status: **prepared, not deployed.** No Netlify site, database, email provider or
 | Attachments | Netlify Blobs store `manuscript-attachments` (private to the site, strong consistency). `STORAGE_DRIVER=netlify-blobs`. |
 | Email | Resend over HTTPS (`EMAIL_TRANSPORT=resend`). |
 | Email retries | `netlify/functions/email-retry.mts`, a scheduled function (every 5 minutes, published deploys only) calling `POST /api/jobs/run` with `CRON_SECRET`. |
-| Migrations | `npm run db:migrate` in the build command (`netlify.toml`), before `next build`. |
+| Migrations and content | `npm run db:migrate`, then `npm run db:seed:content` (one-time, marker-guarded), in the build command (`netlify.toml`), before `next build`. |
 
 ## One-time setup
 
@@ -23,10 +23,12 @@ Status: **prepared, not deployed.** No Netlify site, database, email provider or
    - Build settings come from `netlify.toml`; don't override them.
    - Set the production branch to `main` only after the pull request is merged.
 3. **Environment variables** (Site configuration → Environment variables). Never put these in Git or in an issue.
+   - Set each one for the **Production** deploy context only. Otherwise pull-request previews would build and run against the live database.
+   - Previews then show the "missing settings" error instead, which is safe.
 
    | Variable | Value |
    |---|---|
-   | `APP_URL` | The site's https URL (e.g. `https://<site>.netlify.app`, later your domain) |
+   | `APP_URL` | Leave unset on Netlify. The app uses `URL`, which Netlify provides at runtime: the site's main address, including a custom domain once you add one. |
    | `DATABASE_URL` | Neon pooled connection string |
    | `DATABASE_URL_UNPOOLED` | Neon direct connection string (used by migrations and operator scripts) |
    | `BETTER_AUTH_SECRET` | 32+ random characters: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
@@ -45,11 +47,9 @@ Status: **prepared, not deployed.** No Netlify site, database, email provider or
 4. **Deploy.**
    - The build runs migrations, then builds.
    - If a required variable is missing, every request returns 500, and the function log lists exactly which settings are missing. The app never falls back to development services in production.
-5. **Seed the original content** once. From a laptop with the repository checked out:
-   ```bash
-   DATABASE_URL="<direct connection string>" npm run db:seed:content
-   ```
-   This imports the About, Submissions and Meetings copy, the hidden Volume I planning record, a draft meeting, and "A Second Draft" as an **unpublished** manuscript with open checks. It is safe to run twice.
+5. **The original content is imported automatically** by the first production build (`npm run db:seed:content` in `netlify.toml`).
+   - It imports the About, Submissions and Meetings copy, the hidden Volume I planning record, a draft meeting, and "A Second Draft" as an **unpublished** manuscript with open checks.
+   - It records a marker and skips itself on every later build, so nothing is overwritten.
 6. **Create the first administrator.**
    1. Sign up on the live site with your own email and confirm it.
    2. Run:
@@ -58,7 +58,7 @@ Status: **prepared, not deployed.** No Netlify site, database, email provider or
       ```
    - It refuses if an administrator already exists, and refuses unconfirmed accounts.
 7. **Custom domain** (optional, needs a domain you own): Netlify → Domain management. Netlify issues the HTTPS certificate. Then:
-   - update `APP_URL` to the new https address and redeploy
+   - redeploy, so the app picks up the new main address
    - update the Resend webhook URL
 
 ## Rollback
