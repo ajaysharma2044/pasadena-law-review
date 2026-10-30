@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AccessDenied, Flash, FormNav, Page, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
+import { myAwards } from "@/server/services/badges";
 import { myApplications } from "@/server/services/applications";
 import { getProfile } from "@/server/services/profile";
 import { currentActor } from "@/server/session";
@@ -15,7 +16,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
   const actor = await currentActor();
   if (!actor) redirect("/signin?next=%2Faccount");
   if (actor.status === "suspended") return <AccessDenied reason="suspended" />;
-  const [profile, applications] = await Promise.all([getProfile(actor.userId), myApplications(actor)]);
+  const [profile, applications, awards] = await Promise.all([getProfile(actor.userId), myApplications(actor), myAwards(actor.userId)]);
   return (
     <Page title="Your account">
       <Flash notice={notice} error={error} />
@@ -46,6 +47,14 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
         <button className="button" type="submit">Save profile</button>
       </form>
 
+      <h2>Recognition</h2>
+      <p>Badges recognize writing and service but do not grant club membership or elected office.</p>
+      {awards.length?<ul>{awards.map(a=><li key={a.key}>{a.title}</li>)}</ul>:<p>No awards yet.</p>}
+      <form method="post" action="/api/account/badge-visibility" className="form">
+        <FormNav back="/account" next="/account"/>
+        <label><input type="checkbox" name="showBadges" defaultChecked={profile?.showBadges??false}/> Display recognition publicly beside my published articles</label>
+        <button className="button" type="submit">Save recognition privacy</button>
+      </form>
       <h2>Editorial access</h2>
       {actor.role === "member" ? (
         <>
