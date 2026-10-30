@@ -1,5 +1,5 @@
 import { and, eq, asc } from "drizzle-orm";
-import { assertRole, type Actor } from "../actor";
+import { assertActive, assertRole, type Actor } from "../actor";
 import { getDb } from "../db/client";
 import { audit } from "../audit";
 import { authorProfiles, contributorBadges, user } from "../db/schema";
@@ -15,19 +15,33 @@ export const BADGES = {
 export type BadgeKey = keyof typeof BADGES;
 export const keys = Object.keys(BADGES) as BadgeKey[];
 
-export async function setBadge(actor: Actor, userId: string, badgeKey: string, action: string, reason: string) {
+export const BADGE_CRITERIA: Record<BadgeKey, string> = {
+ published_author: "For an author whose work has completed editorial review and been published in the journal.",
+ senior_contributor: "For a sustained record of substantive writing, editing, or service documented by the administrators; no automatic article or attendance threshold.",
+ editorial_board: "Recognizes an already authorized editorial appointment. Administrators must confirm the appointment and record its evidence; this badge never appoints anyone or grants elected office.",
+ featured_scholar: "For a contribution selected by the editors for exceptional research, sourcing, or analysis. This is journal recognition, not a PCC academic credential.",
+ founding_contributor: "For documented contributions to the journal's founding or initial development; this does not confer founder ownership or elected office.",
+};
+
+export async function setBadge(actor: Actor, userId: string, badgeKey: string, action: string, reason: string, appointmentConfirmed = false) {
  assertRole(actor, ["admin"]);
  if (!Object.prototype.hasOwnProperty.call(BADGES, badgeKey) || !["award","revoke"].includes(action)) throw invalid("Invalid badge or action.");
+ const evidence = reason.trim();
+ if (!evidence || evidence.length > 300) throw invalid("Record evidence or a reason (up to 300 characters).");
+ if (action === "award" && badgeKey === "editorial_board" && !appointmentConfirmed) throw invalid("Confirm an existing authorized editorial appointment; this badge cannot make an appointment.");
  const db = getDb();
- await db.transaction(async tx => {
+ return db.transaction(async tx => {
   const [u] = await tx.select({id:user.id}).from(user).where(eq(user.id,userId));
   if (!u) throw notFound();
   if (action === "award") {
-   await tx.insert(contributorBadges).values({userId,badgeKey,awardedBy:actor.userId,reason:reason.slice(0,300)}).onConflictDoNothing();
+   const changed = await tx.insert(contributorBadges).values({userId,badgeKey,awardedBy:actor.userId,reason:evidence}).onConflictDoNothing().returning({ userId: contributorBadges.userId });
+   if (!changed.length) return false;
   } else {
-   await tx.delete(contributorBadges).where(and(eq(contributorBadges.userId,userId),eq(contributorBadges.badgeKey,badgeKey)));
+   const changed = await tx.delete(contributorBadges).where(and(eq(contributorBadges.userId,userId),eq(contributorBadges.badgeKey,badgeKey))).returning({ userId: contributorBadges.userId });
+   if (!changed.length) return false;
   }
-  await audit(tx,{actorId:actor.userId,action:action==="award"?"badge.award":"badge.revoke",targetType:"user",targetId:userId,metadata:{badgeKey,reason:reason.slice(0,300)}});
+  await audit(tx,{actorId:actor.userId,action:action==="award"?"badge.award":"badge.revoke",targetType:"user",targetId:userId,metadata:{badgeKey,reason:evidence,...(action === "award" && badgeKey === "editorial_board" ? {appointmentConfirmed:true} : {})}});
+  return true;
  });
 }
 export async function allAwards(actor: Actor) {
@@ -45,7 +59,10 @@ export async function visibleAwards(userId: string|null) {
  return p?.showBadges ? myAwards(userId) : [];
 }
 export async function setVisibility(actor: Actor, showBadges: boolean) {
+ assertActive(actor);
  const db=getDb();
+ await db.transaction(async db => {
  await db.insert(authorProfiles).values({userId:actor.userId,displayName:actor.name,showBadges}).onConflictDoUpdate({target:authorProfiles.userId,set:{showBadges,updatedAt:new Date()}});
  await audit(db,{actorId:actor.userId,action:"badge.visibility",targetType:"user",targetId:actor.userId,metadata:{showBadges}});
+ });
 }

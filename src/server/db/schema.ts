@@ -549,5 +549,8 @@ export const contributorBadges = pgTable("contributor_badges", {
   badgeKey: text("badge_key").notNull(),
   awardedBy: text("awarded_by").references(() => user.id, { onDelete: "set null" }),
   reason: text("reason").notNull().default(""),
-  awardedAt: now(),
-}, t => [uniqueIndex("contributor_badge_unique").on(t.userId, t.badgeKey)]);
+  awardedAt: timestamp("awarded_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  uniqueIndex("contributor_badge_unique").on(t.userId, t.badgeKey),
+  check("contributor_badge_valid", sql`${t.badgeKey} in ('published_author','senior_contributor','editorial_board','featured_scholar','founding_contributor')`),
+]);
