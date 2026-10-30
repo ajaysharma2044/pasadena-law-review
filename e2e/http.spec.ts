@@ -173,7 +173,7 @@ test.describe("browser console", () => {
     // Client-side navigation (React Server Components requests) between pages.
     await page.getByRole("banner").getByRole("link", { name: "Meetings" }).click();
     await expect(page).toHaveURL(/\/meetings$/);
-    await page.getByRole("banner").getByRole("link", { name: "Journal" }).click();
+    await page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Journal", exact: true }).click();
     await expect(page).toHaveURL(/\/journal$/);
 
     await signIn(page, "admin@demo.test");
