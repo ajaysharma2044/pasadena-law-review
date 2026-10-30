@@ -126,6 +126,69 @@ test.describe.serial("worked traces", () => {
     await expect(page.getByRole("link", { name: TITLE })).toBeVisible();
   });
 
+  test("Recognition: admin award/revoke, member privacy, and public bylines", async ({ page }) => {
+    test.setTimeout(180_000);
+    const badges = ["Published Author", "Senior Contributor", "Editorial Board", "Featured Scholar", "Founding Contributor"];
+    await signIn(page, "admin@demo.test");
+    await page.goto("/admin/badges");
+    await page.getByLabel("Search registered users").fill(AUTHOR.email);
+    await page.getByRole("button", { name: "Search", exact: true }).click();
+    const memberOption = page.getByLabel("Member").locator("option").filter({ hasText: AUTHOR.email });
+    const userId = await memberOption.getAttribute("value");
+    expect(userId).toBeTruthy();
+    for (const badge of badges) {
+      await page.getByLabel("Member", { exact: true }).selectOption(userId!);
+      await page.getByLabel("Badge", { exact: true }).selectOption({ label: badge });
+      await page.getByLabel("Evidence / rationale").fill("Synthetic regression account; editorial appointment documented for test.");
+      if (badge === "Editorial Board") await page.getByRole("checkbox", { name: /For an Editorial Board/ }).check();
+      await page.getByRole("button", { name: "Save", exact: true }).click();
+      await expect(page.getByRole("status")).toContainText("Recognition was updated.");
+    }
+    await page.getByLabel("Member", { exact: true }).selectOption(userId!);
+    await page.getByLabel("Badge", { exact: true }).selectOption({ label: "Published Author" });
+    await page.getByLabel("Evidence / rationale").fill("Duplicate request");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("status")).toContainText("No change");
+    await signOut(page);
+    await page.goto(`/articles/${SLUG}`);
+    await expect(page.locator(".byline")).not.toContainText("Published Author");
+
+    await signIn(page, AUTHOR.email, authorPassword);
+    await page.goto("/admin/badges");
+    await expect(page.getByRole("heading", { name: "Access denied" })).toBeVisible();
+    const denied = await page.request.post("/api/admin/badges", { headers: { origin: "http://localhost:3300" }, data: { userId, badgeKey: "published_author", action: "award", reason: "forged" } });
+    expect(denied.status()).toBe(403);
+    await page.goto("/account");
+    for (const badge of badges) await expect(page.getByRole("listitem", { exact: true }).filter({ hasText: badge })).toBeVisible();
+    const consent = page.getByRole("checkbox", { name: /Display recognition publicly/ });
+    await expect(consent).not.toBeChecked();
+    await consent.check();
+    await page.getByRole("button", { name: "Save recognition privacy" }).click();
+    await page.goto(`/articles/${SLUG}`);
+    for (const badge of badges) await expect(page.locator(".byline")).toContainText(badge);
+    await page.goto("/account");
+    await page.getByRole("checkbox", { name: /Display recognition publicly/ }).uncheck();
+    await page.getByRole("button", { name: "Save recognition privacy" }).click();
+    await signOut(page);
+    await page.goto(`/articles/${SLUG}`);
+    await expect(page.locator(".byline")).not.toContainText("Published Author");
+
+    await signIn(page, "admin@demo.test");
+    for (const badge of badges) {
+      await page.goto(`/admin/badges?q=${encodeURIComponent(AUTHOR.email)}`);
+      await page.getByLabel("Member", { exact: true }).selectOption(userId!);
+      await page.getByLabel("Badge", { exact: true }).selectOption({ label: badge });
+      await page.getByLabel("Action", { exact: true }).selectOption("revoke");
+      await page.getByLabel("Evidence / rationale").fill("Synthetic regression cleanup");
+      await page.getByRole("button", { name: "Save", exact: true }).click();
+      await expect(page.getByRole("status")).toContainText("Recognition was updated.");
+    }
+    await page.goto("/admin/audit");
+    await expect(page.getByText("badge.award", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("badge.revoke", { exact: true }).first()).toBeVisible();
+    await signOut(page);
+  });
+
   test("Trace 3: a declined applicant and a revoked editor are refused, including direct requests", async ({ page }) => {
     const applicant = { name: "Riley Applicant", email: "riley@applicant.test" };
     const pw = await signUpAndVerify(page, applicant.name, applicant.email);
