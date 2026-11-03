@@ -14,6 +14,8 @@ const NOTICES: Record<string, string> = {
   application_withdrawn: "Your application was withdrawn.",
   application_decided: "The application decision was recorded and the applicant was emailed.",
   role_changed: "The role was changed.",
+  badge_updated: "Recognition was updated.",
+  badge_unchanged: "No change: that badge was already awarded, or there was no award to revoke.",
   status_changed: "The account status was changed.",
   saved: "Saved.",
   draft_saved: "Draft saved.",

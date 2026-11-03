@@ -111,6 +111,7 @@ export const authorProfiles = pgTable("author_profiles", {
     .references(() => user.id, { onDelete: "cascade" }),
   displayName: text("display_name").notNull(),
   bio: text("bio").notNull().default(""),
+  showBadges: boolean("show_badges").notNull().default(false),
   updatedAt: now(),
 });
 
@@ -542,3 +543,14 @@ export const appRateLimits = pgTable("app_rate_limits", {
   windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
   count: integer("count").notNull(),
 });
+
+export const contributorBadges = pgTable("contributor_badges", {
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  badgeKey: text("badge_key").notNull(),
+  awardedBy: text("awarded_by").references(() => user.id, { onDelete: "set null" }),
+  reason: text("reason").notNull().default(""),
+  awardedAt: timestamp("awarded_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  uniqueIndex("contributor_badge_unique").on(t.userId, t.badgeKey),
+  check("contributor_badge_valid", sql`${t.badgeKey} in ('published_author','senior_contributor','featured_scholar','founding_contributor')`),
+]);

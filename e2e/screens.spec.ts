@@ -39,6 +39,7 @@ test.describe.serial("screens, overflow and accessibility", () => {
     ["article", "/articles/parking-appeals-at-pcc-a-proposal"],
     ["meetings", "/meetings"],
     ["submissions", "/submissions"],
+    ["recognition", "/recognition"],
     ["about", "/about"],
     ["signup", "/signup"],
     ["not-found", "/articles/a-second-draft"],
@@ -47,7 +48,7 @@ test.describe.serial("screens, overflow and accessibility", () => {
   for (const [name, path] of PUBLIC) {
     test(`public: ${name}`, async ({ page }) => {
       await page.goto(path);
-      await check(page, name, ["front", "article", "journal", "meetings", "submissions"].includes(name) ? [320, 375, 768, 1440] : [375, 1440]);
+      await check(page, name, ["front", "article", "journal", "meetings", "submissions", "recognition"].includes(name) ? [320, 375, 768, 1440] : [375, 1440]);
     });
   }
 
@@ -55,6 +56,9 @@ test.describe.serial("screens, overflow and accessibility", () => {
     await signIn(page, "avery@author.test", "author-pass-2026!");
     await page.goto("/dashboard");
     await check(page, "dashboard", [375, 1440]);
+    await page.goto("/account");
+    await check(page, "account", [320, 375, 768, 1440]);
+    await page.goto("/dashboard");
     await page.getByRole("link", { name: "Start a submission" }).click();
     await page.getByRole("button", { name: "Create draft" }).click();
     await check(page, "manuscript-draft", [375, 1440]);
@@ -68,6 +72,8 @@ test.describe.serial("screens, overflow and accessibility", () => {
     await check(page, "editor-manuscript", [375, 1440]);
     await page.goto("/admin/members");
     await check(page, "admin-members", [375, 1440]);
+    await page.goto("/admin/badges");
+    await check(page, "admin-badges", [320, 375, 768, 1440]);
     await page.goto("/admin/settings");
     await check(page, "admin-settings", [1440]);
     writeFileSync(`${OUT}/axe-findings.json`, JSON.stringify(findings, null, 2));

@@ -7,7 +7,7 @@ import { pageAccess } from "@/server/session";
 export const metadata: Metadata = { title: "Start a submission", robots: { index: false } };
 
 const KINDS = [
-  ["essay", "Essay", "An argument about a legal or policy question. 3,000–8,000 words."],
+  ["essay", "Essay", "An argument about a legal or policy question. 1,000–8,000 words."],
   ["proposal", "Proposal", "A specific change to a rule, policy, or procedure, with the language you want adopted."],
   ["note", "Note", "A close reading of one statute, case, or campus policy. 2,000–5,000 words."],
   ["forum", "Forum piece", "A reply to something we published or debated. Up to 1,500 words."],

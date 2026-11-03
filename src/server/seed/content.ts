@@ -73,7 +73,7 @@ Law reviews are usually edited by law students. This one is edited by community 
 
 ## What we publish
 
-**Essays.** An argument about a legal or policy question. 3,000–8,000 words.
+**Essays.** An argument about a legal or policy question. 1,000–8,000 words.
 
 **Proposals.** A specific change to a rule, policy, or procedure, with the language you want adopted. Put the change in the first paragraph. Any length.
 

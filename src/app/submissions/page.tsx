@@ -25,6 +25,7 @@ export default async function SubmissionsPage() {
       </div>
       <div className="page narrow">
         <div className="prose">
+          <p><Link href="/recognition">Contributor recognition and incentives</Link></p>
           {page ? <div dangerouslySetInnerHTML={{ __html: page.html }} /> : <p className="empty">Guidelines are being written.</p>}
         </div>
       </div>

@@ -5,6 +5,7 @@ import {
   issues,
   mastheadEntries,
   meetings,
+  manuscripts,
   publications,
   publicationVersions,
   volumes,
@@ -73,6 +74,7 @@ export async function getLiveArticle(slug: string) {
   const [row] = await db
     .select({
       ...liveColumns,
+      authorId: manuscripts.authorId,
       authorBio: publicationVersions.authorBio,
       bodyHtml: publicationVersions.bodyHtml,
       issueNumber: issues.number,
@@ -82,6 +84,7 @@ export async function getLiveArticle(slug: string) {
     })
     .from(publications)
     .innerJoin(publicationVersions, eq(publicationVersions.id, publications.currentVersionId))
+    .innerJoin(manuscripts, eq(manuscripts.id, publications.manuscriptId))
     .leftJoin(issues, eq(issues.id, publications.issueId))
     .leftJoin(volumes, eq(volumes.id, issues.volumeId))
     .where(and(eq(publications.slug, slug), eq(publications.state, "live")));
