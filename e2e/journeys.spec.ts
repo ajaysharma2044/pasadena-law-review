@@ -206,7 +206,7 @@ test.describe.serial("worked traces", () => {
     await expect(page.getByText("The application decision was recorded")).toBeVisible();
 
     await page.goto("/admin/members?q=editor2");
-    await page.getByLabel(/Role for Demo Editor Two/).selectOption("member");
+    await page.getByLabel(/Role for Demo Board Member Two/).selectOption("member");
     await page.getByRole("button", { name: "Set role" }).click();
     await expect(page.getByText("The role was changed.")).toBeVisible();
     await signOut(page);
@@ -220,7 +220,7 @@ test.describe.serial("worked traces", () => {
     // the declined applicant is still a member and is refused by privileged endpoints
     await signIn(page, applicant.email, pw);
     await page.goto("/account");
-    await expect(page.getByText("Author (member)")).toBeVisible();
+    await expect(page.locator(".facts-inline .badge")).toHaveText("Member");
     await expect(page.getByText("Note from the editors: Please come to a few meetings first.")).toBeVisible();
     const headers = { Origin: ORIGIN, "Content-Type": "application/json" };
     const promote = await page.request.post("/api/admin/members/any-user/role", { headers, data: { role: "admin" } });
