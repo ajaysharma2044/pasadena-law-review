@@ -123,3 +123,16 @@ describe("redirect targets", () => {
     }
   });
 });
+
+describe("same-origin check", () => {
+  it("rejects other sites, and outside production accepts the address the request arrived on", async () => {
+    const a = await makeUser("a@example.org");
+    const body = { cookie: a.cookie, json: { kind: "essay" } };
+    expect((await call(createRoute, "POST", "/api/manuscripts", body)).status).toBe(200);
+    expect((await call(createRoute, "POST", "/api/manuscripts", { ...body, origin: null })).status).toBe(403);
+    expect((await call(createRoute, "POST", "/api/manuscripts", { ...body, origin: "https://evil.example" })).status).toBe(403);
+    // The dev server is reachable as 127.0.0.1 or a LAN address too; the browser's Origin then names that host.
+    expect((await call(createRoute, "POST", "/api/manuscripts", { ...body, origin: "http://127.0.0.1:3000", headers: { host: "127.0.0.1:3000" } })).status).toBe(200);
+    expect((await call(createRoute, "POST", "/api/manuscripts", { ...body, origin: "http://127.0.0.1:3000", headers: { host: "localhost:3000" } })).status).toBe(403);
+  });
+});

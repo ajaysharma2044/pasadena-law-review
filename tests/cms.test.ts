@@ -118,6 +118,10 @@ describe("settings, issues and masthead", () => {
     await cms.updateSettings(admin, { contact_email: "editors@example.org" });
     expect((await getSettings()).contact_email).toBe("editors@example.org");
 
+    // Saving the settings form with no front-page lead chosen clears the setting rather than failing.
+    await cms.updateSettings(admin, { front_lead_publication_id: null });
+    expect((await getSettings()).front_lead_publication_id).toBeNull();
+
     expect(await getPublishedMasthead()).toBeNull();
     expect(await status(cms.saveMasthead(admin, [{ roleTitle: "Editor-in-Chief", personName: "" }], true))).toBe(422);
     await cms.saveMasthead(admin, [{ roleTitle: "Editor-in-Chief", personName: "Real Person" }], false);
