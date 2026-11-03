@@ -63,7 +63,7 @@ describe("attachment access", () => {
   it("lets the author upload and download; other authors can't; editors can once submitted", async () => {
     const author = await actor();
     const other = await actor();
-    const editor = await actor("editor");
+    const editor = await actor("editorial_board");
     const { id } = await m.createDraft(author, "essay");
     const up = await att.uploadAttachment(author, id, { name: "paper.pdf", bytes: PDF });
     const mine = await att.readAttachment(author, up.id);
@@ -83,7 +83,7 @@ describe("attachment access", () => {
 
   it("keeps the files of a draft withdrawn before submission away from editors", async () => {
     const author = await actor();
-    const editor = await actor("editor");
+    const editor = await actor("editorial_board");
     const { id } = await m.createDraft(author, "essay");
     const up = await att.uploadAttachment(author, id, { name: "paper.pdf", bytes: PDF });
     await m.withdraw(author, id);

@@ -63,7 +63,7 @@ describe("original content seed", () => {
 describe("page changes", () => {
   it("an editor's proposal doesn't change the public page until an administrator publishes it", async () => {
     await seedContent(getDb());
-    const editor = await actor("editor");
+    const editor = await actor("editorial_board");
     const admin = await actor("admin");
     const before = (await getPublishedPage("about"))!.html;
     const { id } = await cms.proposePage(editor, "about", "A **new** About page.", "Rewrite");
@@ -89,7 +89,7 @@ describe("meetings", () => {
   });
 
   it("editors keep meetings in draft; only administrators announce them", async () => {
-    const editor = await actor("editor");
+    const editor = await actor("editorial_board");
     const admin = await actor("admin");
     const base = {
       status: "draft", startsAtLocal: "", timezone: "America/Los_Angeles", location: "", motion: "Resolved, That x.",
@@ -111,7 +111,7 @@ describe("meetings", () => {
 describe("settings, issues and masthead", () => {
   it("validates settings and keeps the masthead hidden until real names are published", async () => {
     const admin = await actor("admin");
-    const editor = await actor("editor");
+    const editor = await actor("editorial_board");
     expect(await status(cms.updateSettings(editor, { contact_email: "editors@example.org" }))).toBe(403);
     expect(await status(cms.updateSettings(admin, { contact_email: "not-an-email" }))).toBe(422);
     expect(await status(cms.updateSettings(admin, { timezone: "Mars/Olympus" }))).toBe(422);

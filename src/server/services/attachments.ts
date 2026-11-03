@@ -93,7 +93,7 @@ export async function authorizeDownload(actor: Actor, attachmentId: string) {
   if (!row) throw notFound();
   const own = row.authorId === actor.userId;
   // Editors see files only once the piece has been submitted (a draft withdrawn unsent stays private).
-  const editorial = (actor.role === "editor" || actor.role === "admin") && row.status !== "draft" && row.submitted !== null && !own;
+  const editorial = (actor.role === "editorial_board" || actor.role === "admin") && row.status !== "draft" && row.submitted !== null && !own;
   if (!own && !editorial) throw notFound();
   return row.a;
 }

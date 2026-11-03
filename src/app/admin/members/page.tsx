@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin-nav";
-import { AccessDenied, Flash, FormNav, Page, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
+import { AccessDenied, Flash, FormNav, Page, RoleBadge, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
 import { listMembers } from "@/server/services/members";
 import { pageAccess } from "@/server/session";
 
@@ -24,7 +24,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Sear
         <select id="role" name="role" defaultValue={filters.role} className="w-narrow">
           <option value="">Any role</option>
           <option value="member">Members</option>
-          <option value="editor">Editors</option>
+          <option value="editorial_board">Editorial board</option>
           <option value="admin">Administrators</option>
         </select>
         <label className="sr-only" htmlFor="status">Status</label>
@@ -54,7 +54,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Sear
               <tr key={m.id}>
                 <td>{m.name}</td>
                 <td>{m.email}{m.emailVerified ? "" : " (unconfirmed)"}</td>
-                <td>{m.role}</td>
+                <td><RoleBadge role={m.role} /></td>
                 <td>
                   {m.status}
                   {m.statusReason ? <span className="hint"> {m.statusReason}</span> : null}
@@ -66,7 +66,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Sear
                     <label className="sr-only" htmlFor={`role-${m.id}`}>Role for {m.name}</label>
                     <select id={`role-${m.id}`} name="role" defaultValue={m.role} className="w-narrow">
                       <option value="member">Member</option>
-                      <option value="editor">Editor</option>
+                      <option value="editorial_board">Editorial board</option>
                       <option value="admin">Administrator</option>
                     </select>
                     <button className="button" type="submit">Set role</button>

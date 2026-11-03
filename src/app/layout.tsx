@@ -31,7 +31,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </li>
       {isEditor(actor) ? (
         <li>
-          <Link href="/editor">Editor</Link>
+          <Link href="/editor">Editorial board</Link>
         </li>
       ) : null}
       {isAdmin(actor) ? (

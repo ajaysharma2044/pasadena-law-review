@@ -4,7 +4,7 @@ import { AccessDenied, Flash, FormNav, Page, flashFrom, formatDateTime, type Sea
 import { listApplications } from "@/server/services/applications";
 import { pageAccess } from "@/server/session";
 
-export const metadata: Metadata = { title: "Editor applications" };
+export const metadata: Metadata = { title: "Editorial board applications" };
 
 export default async function ApplicationsPage({ searchParams }: { searchParams: SearchParams }) {
   const access = await pageAccess("/admin/applications", ["admin"]);
@@ -14,7 +14,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
   const apps = await listApplications(access.actor, status === "all" ? undefined : status);
   const back = `/admin/applications?status=${status}`;
   return (
-    <Page title="Editor applications" wide>
+    <Page title="Editorial board applications" wide>
       <AdminNav current="/admin/applications" />
       <Flash notice={notice} error={error} />
       <form className="actions" method="get" action="/admin/applications">
@@ -51,7 +51,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
                 <textarea id={`note-${a.id}`} name="note" maxLength={2000} />
               </div>
               <div className="actions">
-                <button className="button button-primary" type="submit" name="decision" value="approve">Approve as editor</button>
+                <button className="button button-primary" type="submit" name="decision" value="approve">Add to the editorial board</button>
                 <button className="button button-danger" type="submit" name="decision" value="decline">Decline</button>
               </div>
             </form>

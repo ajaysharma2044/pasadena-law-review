@@ -161,7 +161,7 @@ describe("authorization boundaries", () => {
   });
 
   it("denies editors the admin endpoints", async () => {
-    const ed = await makeUser("kai@example.org", "editor");
+    const ed = await makeUser("kai@example.org", "editorial_board");
     const m = await makeUser("lu@example.org");
     const res = await call(statusRoute, "POST", `/api/admin/members/${m.id}/status`, { cookie: ed.cookie, params: { id: m.id }, json: { status: "suspended" } });
     expect(res.status).toBe(403);
@@ -181,7 +181,7 @@ describe("editorial applications", () => {
 
     const res = await call(decideRoute, "POST", `/api/admin/applications/${id}/decision`, { cookie: admin.cookie, params: { id }, json: { decision: "approve", note: "Welcome." } });
     expect(res.status).toBe(200);
-    expect(await membershipOf(ap.id)).toMatchObject({ role: "editor" });
+    expect(await membershipOf(ap.id)).toMatchObject({ role: "editorial_board" });
     const audits = await getDb().select().from(s.auditEvents).where(eq(s.auditEvents.action, "application.approve"));
     expect(audits).toHaveLength(1);
     const mails = await getDb().select().from(s.emailJobs).where(and(eq(s.emailJobs.toEmail, "mo@example.org"), eq(s.emailJobs.kind, "application_decided")));
@@ -216,8 +216,8 @@ describe("suspension, revocation and the last administrator", () => {
 
   it("a revoked editor loses editor access on the next request", async () => {
     const admin = await makeUser("admin@example.org", "admin");
-    const ed = await makeUser("pat@example.org", "editor");
-    expect((await getActor(headersWith(ed.cookie)))!.role).toBe("editor");
+    const ed = await makeUser("pat@example.org", "editorial_board");
+    expect((await getActor(headersWith(ed.cookie)))!.role).toBe("editorial_board");
     await call(roleRoute, "POST", `/api/admin/members/${ed.id}/role`, { cookie: admin.cookie, params: { id: ed.id }, json: { role: "member" } });
     expect((await getActor(headersWith(ed.cookie)))!.role).toBe("member");
   });
@@ -229,7 +229,7 @@ describe("suspension, revocation and the last administrator", () => {
     const suspend = await call(statusRoute, "POST", `/api/admin/members/${admin.id}/status`, { cookie: admin.cookie, params: { id: admin.id }, json: { status: "suspended" } });
     expect(suspend.status).toBe(409);
     const second = await makeUser("admin2@example.org", "admin");
-    const ok = await call(roleRoute, "POST", `/api/admin/members/${second.id}/role`, { cookie: admin.cookie, params: { id: second.id }, json: { role: "editor" } });
+    const ok = await call(roleRoute, "POST", `/api/admin/members/${second.id}/role`, { cookie: admin.cookie, params: { id: second.id }, json: { role: "editorial_board" } });
     expect(ok.status).toBe(200);
   });
 

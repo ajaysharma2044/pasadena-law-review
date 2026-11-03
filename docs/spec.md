@@ -22,7 +22,7 @@ Turn the static site into a working publication. Specifically:
 **In:**
 - Accounts: sign-up, verification, sign-in/out, recovery, profile, password change.
 - Editorial applications.
-- Roles: member, editor, admin, plus suspension.
+- Roles: member, editorial board, admin, plus suspension.
 - Manuscripts: drafts, preview, submission, revisions, withdrawal, private attachments (PDF/DOCX).
 - Review: queue, assignment, two independent recommendations, author feedback separate from internal notes.
 - Decisions, publication snapshots, unpublishing and rollback.
@@ -38,7 +38,7 @@ Turn the static site into a working publication. Specifically:
 |---|---|
 | Visitor | Read public content; sign up; view guidelines and meetings |
 | Unverified account | Verify email; request another link; recover access |
-| Verified member (author) | Manage own account; create and submit own writing; see own decisions and author-visible feedback; apply to be an editor |
+| Verified member (author) | Manage own account; create and submit own writing; see own decisions and author-visible feedback; apply to join the editorial board |
 | Pending editorial applicant | Member permissions only; see own application status |
 | Editor | Review queue; claim reviews; recommend; author-visible feedback and internal notes; editorial edits; propose page changes |
 | Administrator | Everything editors can do, plus: members and applications, roles, suspension, assignments, decisions, publication, issues, meetings, pages, settings, email status, audit log |

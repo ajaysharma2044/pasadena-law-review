@@ -24,7 +24,7 @@ export async function signIn(email: string, password = PASSWORD) {
 }
 
 /** A verified, signed-in account with the given role (role set directly, as test setup). */
-export async function makeUser(email: string, role: "member" | "editor" | "admin" = "member") {
+export async function makeUser(email: string, role: "member" | "editorial_board" | "admin" = "member") {
   await signUp(email);
   await openVerificationLink(email);
   const [u] = await getDb().select().from(s.user).where(eq(s.user.email, email));

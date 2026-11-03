@@ -28,7 +28,7 @@ describe("direct requests across ownership and role boundaries", () => {
   it("keeps one author's manuscript and files away from another author, anonymous visitors and members", async () => {
     const a = await makeUser("a@example.org");
     const b = await makeUser("b@example.org");
-    const editor = await makeUser("ed@example.org", "editor");
+    const editor = await makeUser("ed@example.org", "editorial_board");
 
     const { id } = (await (await call(createRoute, "POST", "/api/manuscripts", { cookie: a.cookie, json: { kind: "essay" } })).json()) as { id: string };
     const saved = await call(saveRoute, "POST", `/api/manuscripts/${id}`, { cookie: a.cookie, params: { id }, json: { expectedVersion: 1, title: "Mine", bodyMd: "Text" } });

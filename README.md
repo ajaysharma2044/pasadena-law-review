@@ -4,8 +4,8 @@ The website and editorial system for a student law and policy journal at Pasaden
 
 - **Readers** see published essays, proposals, notes and Forum pieces, the issues, meetings and minutes, and the submission guidelines. They don't need an account.
 - **Members** sign up, confirm their email, and write, preview, submit, revise and withdraw their own pieces.
-- **Editors** work a review queue. They leave comments for the author and private notes for each other, recommend a decision, edit the text as a new version, and propose page changes.
-- **Administrators** approve editors, assign reviews and decide. They publish fixed copies of approved text and can roll back or unpublish them. They also run the issues, meetings, pages, masthead, settings, email status and audit log.
+- **The editorial board** works a review queue. They leave comments for the author and private notes for each other, recommend a decision, edit the text as a new version, and propose page changes.
+- **Administrators** approve editorial board members, assign reviews and decide. They publish fixed copies of approved text and can roll back or unpublish them. They also run the issues, meetings, pages, masthead, settings, email status and audit log.
 
 Status: **implementation ready for review; production launch pending.** Nothing is deployed yet. `docs/manual_todo.md` lists what the owner still has to do, in order.
 

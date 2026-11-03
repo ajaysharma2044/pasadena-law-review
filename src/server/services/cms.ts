@@ -7,7 +7,7 @@ import { conflict, forbidden, invalid, notFound } from "../errors";
 import { PAGE_KEYS, type PageKey } from "./public-content";
 import { SettingsSchema, type Settings } from "./settings";
 
-const isEditorRole = (a: Actor) => a.role === "editor" || a.role === "admin";
+const isEditorRole = (a: Actor) => a.role === "editorial_board" || a.role === "admin";
 function requireEditor(a: Actor) {
   assertActive(a);
   if (!isEditorRole(a)) throw forbidden();

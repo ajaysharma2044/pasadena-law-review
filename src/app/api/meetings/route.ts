@@ -5,7 +5,7 @@ import { saveMeeting } from "@/server/services/cms";
 
 /** Editors save draft meetings; the service refuses public changes unless the account is an administrator. */
 export const POST = mutation(async (req, input) => {
-  const actor = await requireActor(req.headers, ["editor", "admin"]);
+  const actor = await requireActor(req.headers, ["editorial_board", "admin"]);
   const id = input.id || null;
   const r = await saveMeeting(actor, id, id ? Number.parseInt(input.expectedVersion ?? "-1", 10) : null, {
     status: input.status ?? "draft",

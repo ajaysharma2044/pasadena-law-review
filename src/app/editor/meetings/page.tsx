@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Meetings" };
 const LABEL = { draft: "Draft (not public)", announced: "Announced", held: "Held", cancelled: "Cancelled" } as const;
 
 export default async function MeetingsAdmin({ searchParams }: { searchParams: SearchParams }) {
-  const access = await pageAccess("/editor/meetings", ["editor", "admin"]);
+  const access = await pageAccess("/editor/meetings", ["editorial_board", "admin"]);
   if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error } = await flashFrom(searchParams);
   const rows = await listMeetings(access.actor);

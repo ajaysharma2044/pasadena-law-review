@@ -16,7 +16,7 @@ Privacy column:
 | `session` | Session tokens, expiry, IP address, user agent | Secret | Deleted on sign-out, password reset and suspension. |
 | `verification` | Reset tokens and their expiry | Secret | Single use; deleted when used. |
 | `rate_limit` | Better Auth's own counters (unused; its limiter is off because the app applies its own) | Internal | |
-| `memberships` | Role (`member`, `editor`, `admin`), status (`pending`, `active`, `suspended`), suspension reason | Editorial | **The only source of privileges.** Never writable by profile or sign-up requests. |
+| `memberships` | Role (`member`, `editorial_board`, `admin`), status (`pending`, `active`, `suspended`), suspension reason | Editorial | **The only source of privileges.** Never writable by profile or sign-up requests. |
 | `author_profiles` | Public byline name and bio | Public on published work | Separate from private account fields. |
 | `editorial_applications` | Statement, experience, status, decision note | Private to applicant and administrators | At most one pending per person. |
 

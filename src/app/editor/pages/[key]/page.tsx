@@ -15,7 +15,7 @@ type Props = { params: Promise<{ key: string }>; searchParams: SearchParams };
 export default async function EditPage({ params, searchParams }: Props) {
   const { key } = await params;
   if (!PAGE_KEYS.includes(key as PageKey)) notFound();
-  const access = await pageAccess(`/editor/pages/${key}`, ["editor", "admin"]);
+  const access = await pageAccess(`/editor/pages/${key}`, ["editorial_board", "admin"]);
   if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error } = await flashFrom(searchParams);
   const actor = access.actor;

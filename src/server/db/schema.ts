@@ -90,7 +90,7 @@ export const rateLimit = pgTable("rate_limit", {
 
 // Application tables
 
-export const roleEnum = pgEnum("member_role", ["member", "editor", "admin"]);
+export const roleEnum = pgEnum("member_role", ["member", "editorial_board", "admin"]);
 export const memberStatusEnum = pgEnum("member_status", ["pending", "active", "suspended"]);
 
 export const memberships = pgTable("memberships", {

@@ -12,7 +12,7 @@ type Props = { params: Promise<{ id: string }>; searchParams: SearchParams };
 
 export default async function MeetingForm({ params, searchParams }: Props) {
   const { id } = await params;
-  const access = await pageAccess(`/editor/meetings/${encodeURIComponent(id)}`, ["editor", "admin"]);
+  const access = await pageAccess(`/editor/meetings/${encodeURIComponent(id)}`, ["editorial_board", "admin"]);
   if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error } = await flashFrom(searchParams);
   const actor = access.actor;

@@ -71,7 +71,7 @@ describe("S3: author drafts and submissions", () => {
 
   it("sends a receipt to the author and a notice to editors on submission", async () => {
     const author = await actor();
-    await actor("editor");
+    await actor("editorial_board");
     await draftAndSubmit(author);
     const jobs = await getDb().select().from(s.emailJobs);
     expect(jobs.filter((j) => j.kind === "submission_received" && j.toEmail === author.email)).toHaveLength(1);
@@ -119,7 +119,7 @@ describe("S3: author drafts and submissions", () => {
 
 describe("S4: review, recommendations and decisions", () => {
   it("blocks self-review and self-decision", async () => {
-    const editorAuthor = await actor("editor");
+    const editorAuthor = await actor("editorial_board");
     const id = await draftAndSubmit(editorAuthor);
     await expectCode(m.claim(editorAuthor, id), 403, "self_review");
     const adminAuthor = await actor("admin");
@@ -130,7 +130,7 @@ describe("S4: review, recommendations and decisions", () => {
 
   it("requires two recommendations from two different editors on the current revision before acceptance", async () => {
     const author = await actor();
-    const [ed1, ed2, admin] = [await actor("editor"), await actor("editor"), await actor("admin")];
+    const [ed1, ed2, admin] = [await actor("editorial_board"), await actor("editorial_board"), await actor("admin")];
     const id = await draftAndSubmit(author);
     await m.claim(ed1, id);
     const v1 = await m.getForEditor(ed1, id);
@@ -147,7 +147,7 @@ describe("S4: review, recommendations and decisions", () => {
 
   it("only assigned editors may recommend", async () => {
     const author = await actor();
-    const ed = await actor("editor");
+    const ed = await actor("editorial_board");
     const id = await draftAndSubmit(author);
     const v = await m.getForEditor(ed, id);
     await expectCode(m.recommend(ed, id, v.manuscript.currentRevisionId!, "accept", ""), 403, "not_assigned");
@@ -155,7 +155,7 @@ describe("S4: review, recommendations and decisions", () => {
 
   it("runs changes requested, resubmission, a second round, acceptance and publication", async () => {
     const author = await actor();
-    const [ed1, ed2, admin] = [await actor("editor"), await actor("editor"), await actor("admin")];
+    const [ed1, ed2, admin] = [await actor("editorial_board"), await actor("editorial_board"), await actor("admin")];
     const id = await draftAndSubmit(author);
     await m.claim(ed1, id);
     await m.claim(ed2, id);
@@ -188,7 +188,7 @@ describe("S4: review, recommendations and decisions", () => {
 
   it("returns a conflict for a stale decision and refuses invalid transitions", async () => {
     const author = await actor();
-    const [ed1, ed2, admin, admin2] = [await actor("editor"), await actor("editor"), await actor("admin"), await actor("admin")];
+    const [ed1, ed2, admin, admin2] = [await actor("editorial_board"), await actor("editorial_board"), await actor("admin"), await actor("admin")];
     const id = await draftAndSubmit(author);
     await m.claim(ed1, id);
     await m.claim(ed2, id);
@@ -206,7 +206,7 @@ describe("S4: review, recommendations and decisions", () => {
 
   it("records editorial edits as new revisions with their author, without changing the reviewed revision", async () => {
     const author = await actor();
-    const ed = await actor("editor");
+    const ed = await actor("editorial_board");
     const id = await draftAndSubmit(author);
     await m.claim(ed, id);
     const v = await m.getForEditor(ed, id);
@@ -228,7 +228,7 @@ describe("S4: review, recommendations and decisions", () => {
 describe("S5: publication snapshots", () => {
   async function accepted() {
     const author = await actor();
-    const [ed1, ed2, admin] = [await actor("editor"), await actor("editor"), await actor("admin")];
+    const [ed1, ed2, admin] = [await actor("editorial_board"), await actor("editorial_board"), await actor("admin")];
     const id = await draftAndSubmit(author);
     await reviewToAcceptance(id, ed1, ed2, admin);
     return { author, ed1, ed2, admin, id };
@@ -317,7 +317,7 @@ describe("S5: publication snapshots", () => {
 describe("security review follow-ups", () => {
   it("keeps a draft that was withdrawn before submission private to its author", async () => {
     const author = await actor();
-    const [editor, admin] = [await actor("editor"), await actor("admin")];
+    const [editor, admin] = [await actor("editorial_board"), await actor("admin")];
     const { id } = await m.createDraft(author, "essay");
     await m.saveDraft(author, id, 1, { title: "Never Sent", bodyMd: "Private." });
     await m.withdraw(author, id);
@@ -335,7 +335,7 @@ describe("security review follow-ups", () => {
 
   it("doesn't let an administrator act on the publication of their own work", async () => {
     const adminAuthor = await actor("admin");
-    const [ed1, ed2, other] = [await actor("editor"), await actor("editor"), await actor("admin")];
+    const [ed1, ed2, other] = [await actor("editorial_board"), await actor("editorial_board"), await actor("admin")];
     const id = await draftAndSubmit(adminAuthor, "An Administrator's Essay");
     await reviewToAcceptance(id, ed1, ed2, other);
     await expectCode(m.addCheck(adminAuthor, id, "Cite-check"), 403, "self_decision");
@@ -353,7 +353,7 @@ describe("security review follow-ups", () => {
 
   it("enforces closed submissions on the server, but still takes resubmissions", async () => {
     const author = await actor();
-    const [ed1, admin] = [await actor("editor"), await actor("admin")];
+    const [ed1, admin] = [await actor("editorial_board"), await actor("admin")];
     const { id: draftId } = await m.createDraft(author, "essay");
     const saved = await m.saveDraft(author, draftId, 1, { title: "Late", bodyMd: sampleBody });
     const sent = await draftAndSubmit(author, "Sent Before Closing");

@@ -18,8 +18,8 @@ if (config.strict || config.database.kind !== "pglite") {
 const password = process.env.DEMO_PASSWORD ?? "demo-pass-2026!";
 const DEMO = [
   ["admin@demo.test", "Demo Administrator", "admin"],
-  ["editor1@demo.test", "Demo Editor One", "editor"],
-  ["editor2@demo.test", "Demo Editor Two", "editor"],
+  ["editor1@demo.test", "Demo Board Member One", "editorial_board"],
+  ["editor2@demo.test", "Demo Board Member Two", "editorial_board"],
 ] as const;
 
 const handle = createDatabase(config.database);

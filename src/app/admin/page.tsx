@@ -13,7 +13,7 @@ export default async function AdminHome() {
   const n = await adminOverview(access.actor);
   const rows: [string, number, string][] = [
     ["Manuscripts in the editorial process", n.inProcess, "/admin/manuscripts"],
-    ["Editor applications waiting for a decision", n.applications, "/admin/applications"],
+    ["Editorial board applications waiting for a decision", n.applications, "/admin/applications"],
     ["Accounts waiting for approval", n.pendingMembers, "/admin/members?status=pending"],
     ["Page changes proposed by editors", n.proposals, "/admin/pages"],
     ["Emails that failed or bounced", n.failedMail, "/admin/email?status=problem"],

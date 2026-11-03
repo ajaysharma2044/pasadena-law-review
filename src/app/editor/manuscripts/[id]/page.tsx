@@ -33,7 +33,7 @@ type Props = { params: Promise<{ id: string }>; searchParams: SearchParams };
 
 export default async function EditorManuscript({ params, searchParams }: Props) {
   const { id } = await params;
-  const access = await pageAccess(`/editor/manuscripts/${encodeURIComponent(id)}`, ["editor", "admin"]);
+  const access = await pageAccess(`/editor/manuscripts/${encodeURIComponent(id)}`, ["editorial_board", "admin"]);
   if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error, one } = await flashFrom(searchParams);
   const actor = access.actor;
