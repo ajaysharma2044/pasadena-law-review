@@ -7,7 +7,7 @@ import { conflict, forbidden, invalid, notFound } from "../errors";
 import { PAGE_KEYS, type PageKey } from "./public-content";
 import { SettingsSchema, type Settings } from "./settings";
 
-const isEditorRole = (a: Actor) => a.role === "editor" || a.role === "admin";
+const isEditorRole = (a: Actor) => a.role === "editorial_board" || a.role === "admin";
 function requireEditor(a: Actor) {
   assertActive(a);
   if (!isEditorRole(a)) throw forbidden();
@@ -285,10 +285,13 @@ export async function updateSettings(actor: Actor, patch: Partial<Settings>) {
   const db = getDb();
   await db.transaction(async (tx) => {
     for (const [key, value] of Object.entries(data)) {
+      // A cleared setting (for example no front-page lead) is stored as the JSON value null. A bare JS null would
+      // become SQL NULL, which the column refuses.
+      const stored = (value === null ? sql`'null'::jsonb` : value) as never;
       await tx
         .insert(siteSettings)
-        .values({ key, value: value as never, updatedBy: actor.userId })
-        .onConflictDoUpdate({ target: siteSettings.key, set: { value: value as never, updatedBy: actor.userId, updatedAt: new Date() } });
+        .values({ key, value: stored, updatedBy: actor.userId })
+        .onConflictDoUpdate({ target: siteSettings.key, set: { value: stored, updatedBy: actor.userId, updatedAt: new Date() } });
     }
     await audit(tx, { actorId: actor.userId, action: "settings.update", targetType: "settings", targetId: "site", metadata: { keys: Object.keys(data).join(",") } });
   });

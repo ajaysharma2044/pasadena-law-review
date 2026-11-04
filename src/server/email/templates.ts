@@ -17,15 +17,15 @@ export const templates = {
     text: `Hello ${name},\n\nSomeone asked to reset the password for this account. To choose a new password, open:\n\n${url}\n\nThe link works for one hour and only once. If you didn't ask for this, ignore this message; your password hasn't changed.${sign(pub)}`,
   }),
   applicationReceived: (pub: string, name: string, url: string): Rendered => ({
-    subject: `We received your editor application`,
-    text: `Hello ${name},\n\nThanks for applying to join the editors of ${pub}. An administrator will review the application, and you'll get an email when there's a decision. You can check its status at:\n\n${url}${sign(pub)}`,
+    subject: `We received your editorial board application`,
+    text: `Hello ${name},\n\nThanks for applying to join the editorial board of ${pub}. An administrator will review the application, and you'll get an email when there's a decision. You can check its status at:\n\n${url}${sign(pub)}`,
   }),
   applicationDecided: (pub: string, name: string, approved: boolean, note: string, url: string): Rendered => ({
-    subject: approved ? `You're now an editor` : `About your editor application`,
+    subject: approved ? `You're now on the editorial board` : `About your editorial board application`,
     text: `Hello ${name},\n\n${
       approved
-        ? `Your application to edit for ${pub} was approved. The editor's queue is now available when you sign in.`
-        : `Your application to edit for ${pub} was not approved this time.`
+        ? `Your application to join the editorial board of ${pub} was approved. The review queue is now available when you sign in.`
+        : `Your application to join the editorial board of ${pub} was not approved this time.`
     }${note ? `\n\nNote from the editors: ${note}` : ""}\n\n${url}${sign(pub)}`,
   }),
   submissionReceived: (pub: string, name: string, title: string, url: string): Rendered => ({

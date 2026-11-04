@@ -58,7 +58,7 @@ Why this stack (the repository had no backend to reuse):
 - **Every page checks access itself** with `pageAccess()`. A layout's check isn't enough: on a client-side navigation, Next.js can render a page without re-running its layout. Services that read private lists also call `assertRole()`, so a page that forgot its check would still get nothing. Regression test: `e2e/http.spec.ts`, "page-level access on client navigations".
 - **Never-submitted pieces** (drafts, including drafts withdrawn unsent) are private to their authors, along with their files.
 - **No acting on your own work:** an administrator can't decide on, publish, unpublish, restore, or manage the publication checks of a piece they wrote.
-- **Roles:** `member` (author), `editor`, `admin`. **Statuses:** `active`, `pending` (only when an administrator turns on approval for new accounts), `suspended`. **Unverified accounts** can only verify, resend and recover.
+- **Roles:** `member` (author), `editorial_board`, `admin`. **Statuses:** `active`, `pending` (only when an administrator turns on approval for new accounts), `suspended`. **Unverified accounts** can only verify, resend and recover.
 - **Admin access** is granted only by an existing active admin (audited), or by the operator CLI `npm run admin:bootstrap`, which works only while no active admin exists. No web endpoint promotes the first admin, and no credentials are hardcoded.
 - **Last admin protection:** demoting or suspending the last active admin is refused, inside a transaction.
 - **CSRF:** non-GET route handlers require an `Origin` header matching `APP_URL`. Cookies are `SameSite=Lax`. Better Auth's own endpoints use its trusted-origin checks.

@@ -2,17 +2,17 @@ import type { Metadata } from "next";
 import { AccessDenied, Flash, FormNav, Page, flashFrom, type SearchParams } from "@/components/ui";
 import { pageAccess } from "@/server/session";
 
-export const metadata: Metadata = { title: "Apply to be an editor", robots: { index: false } };
+export const metadata: Metadata = { title: "Apply to join the editorial board", robots: { index: false } };
 
 export default async function ApplyPage({ searchParams }: { searchParams: SearchParams }) {
   const { error } = await flashFrom(searchParams);
   const access = await pageAccess("/account/apply");
   if (!access.ok) return <AccessDenied reason={access.reason} />;
   if (access.actor.role !== "member") {
-    return <Page title="Apply to be an editor" lede="You already have editorial access." >{null}</Page>;
+    return <Page title="Apply to join the editorial board" lede="You’re already on the editorial board." >{null}</Page>;
   }
   return (
-    <Page title="Apply to be an editor" lede="Editors read submissions, recommend decisions, and help with cite-checks. An administrator reviews every application.">
+    <Page title="Apply to join the editorial board" lede="Board members read submissions, recommend decisions, and help with cite-checks. An administrator reviews every application.">
       <Flash error={error} />
       <form className="form" method="post" action="/api/account/applications">
         <FormNav back="/account/apply" next="/account" />

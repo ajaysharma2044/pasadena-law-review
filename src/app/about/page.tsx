@@ -44,7 +44,7 @@ export default async function AboutPage() {
               "A public contact address hasn’t been published yet. "
             )}
             To join the staff, come to a <Link href="/meetings">meeting</Link> or{" "}
-            <Link href="/account/apply">apply to be an editor</Link>. For submissions, see the{" "}
+            <Link href="/account/apply">apply to join the editorial board</Link>. For submissions, see the{" "}
             <Link href="/submissions">guidelines</Link>.
           </p>
         </div>

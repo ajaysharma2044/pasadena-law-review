@@ -4,7 +4,7 @@ import { getDb } from "./db/client";
 import { memberships } from "./db/schema";
 import { forbidden, unauthorized } from "./errors";
 
-export type Role = "member" | "editor" | "admin";
+export type Role = "member" | "editorial_board" | "admin";
 
 export type Actor = {
   userId: string;
@@ -64,5 +64,5 @@ export function assertRole(actor: Actor | null | undefined, roles: Role[]): asse
   if (!roles.includes(actor.role)) throw forbidden();
 }
 
-export const isEditor = (a: Actor) => a.role === "editor" || a.role === "admin";
+export const isEditor = (a: Actor) => a.role === "editorial_board" || a.role === "admin";
 export const isAdmin = (a: Actor) => a.role === "admin";

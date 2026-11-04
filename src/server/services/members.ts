@@ -5,7 +5,7 @@ import { getDb, type DB, type Tx } from "../db/client";
 import { authorProfiles, memberships, session, user } from "../db/schema";
 import { conflict, forbidden, invalid, notFound } from "../errors";
 
-const ROLES: Role[] = ["member", "editor", "admin"];
+const ROLES: Role[] = ["member", "editorial_board", "admin"];
 
 async function lockActiveAdmins(tx: Tx) {
   return tx
@@ -24,7 +24,7 @@ async function lockMembership(tx: Tx, userId: string) {
 /** Changes a member's role. Only administrators reach this (checked by the caller and here). */
 export async function changeRole(actor: Actor, targetId: string, role: string, note = "") {
   if (actor.role !== "admin") throw forbidden();
-  if (!ROLES.includes(role as Role)) throw invalid("Choose member, editor or administrator.", { role: "invalid" });
+  if (!ROLES.includes(role as Role)) throw invalid("Choose member, editorial board or administrator.", { role: "invalid" });
   const db = getDb();
   await db.transaction(async (tx) => {
     const admins = await lockActiveAdmins(tx);

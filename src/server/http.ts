@@ -12,9 +12,17 @@ export type Input = Record<string, string>;
 type Ctx<P> = { params: Promise<P> };
 
 export function assertSameOrigin(req: Request) {
-  const expected = new URL(getConfig().appUrl).origin;
+  const config = getConfig();
   const origin = req.headers.get("origin");
-  if (!origin || origin !== expected) throw forbidden("cross_site", "This request didn’t come from this site.");
+  if (!origin) throw forbidden("cross_site", "This request didn’t come from this site.");
+  if (origin === new URL(config.appUrl).origin) return;
+  // Outside production the dev server answers on localhost, 127.0.0.1 and the machine's network address, so the
+  // browser's Origin may legitimately differ from APP_URL. Accept the address the request itself arrived on.
+  if (!config.strict) {
+    const host = req.headers.get("host");
+    if (host && origin === `http://${host}`) return;
+  }
+  throw forbidden("cross_site", "This request didn’t come from this site.");
 }
 
 export async function readInput(req: Request): Promise<Input> {

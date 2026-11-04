@@ -65,7 +65,7 @@ const ERRORS: Record<string, string> = {
   conflict: "Someone else changed this in the meantime. Reload and try again.",
   stale: "Someone else changed this since you opened it. Reload to see their changes, then try again.",
   pending_exists: "You already have an application waiting for a decision.",
-  already_editor: "You already have editorial access.",
+  already_editor: "You’re already on the editorial board.",
   already_decided: "That has already been decided.",
   last_admin: "That would leave the site without an active administrator.",
   self_suspend: "You can’t suspend your own account.",
@@ -153,3 +153,14 @@ export const STATUS_LABEL: Record<string, string> = {
   declined: "Declined",
   withdrawn: "Withdrawn",
 };
+
+export const ROLE_LABEL: Record<"member" | "editorial_board" | "admin", string> = {
+  member: "Member",
+  editorial_board: "Editorial board",
+  admin: "Administrator",
+};
+
+/** A member's role, shown as a small badge. Editorial board membership is a visible standing, not just a permission. */
+export function RoleBadge({ role }: { role: keyof typeof ROLE_LABEL }) {
+  return <span className="badge">{ROLE_LABEL[role] ?? role}</span>;
+}

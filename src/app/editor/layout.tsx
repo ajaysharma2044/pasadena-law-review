@@ -7,7 +7,7 @@ export const metadata: Metadata = { robots: { index: false } };
 
 /** Every /editor page requires an active editor or administrator. */
 export default async function EditorLayout({ children }: { children: ReactNode }) {
-  const access = await pageAccess("/editor", ["editor", "admin"]);
+  const access = await pageAccess("/editor", ["editorial_board", "admin"]);
   if (!access.ok) return <AccessDenied reason={access.reason} />;
   return <>{children}</>;
 }

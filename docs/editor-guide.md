@@ -9,7 +9,7 @@ No HTML or Git needed. Everything happens on the site after you sign in.
   - If it expires, the sign-in page can send a new one.
 - **Forgot your password:** use "Forgot your password?" on the sign-in page. The link works once, for one hour, and signs you out everywhere.
 - **Your public name and bio** (the byline on published work) are under Account → Public profile.
-- **To become an editor:** Account → "Apply to be an editor". An administrator approves or declines, and you get an email either way.
+- **To join the editorial board:** Account → "Apply to join the editorial board". An administrator approves or declines, and you get an email either way.
 
 ## Writing and submitting (any member)
 

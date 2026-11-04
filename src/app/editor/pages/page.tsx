@@ -8,7 +8,7 @@ import { pageAccess } from "@/server/session";
 export const metadata: Metadata = { title: "Pages" };
 
 export default async function PagesIndex({ searchParams }: { searchParams: SearchParams }) {
-  const access = await pageAccess("/editor/pages", ["editor", "admin"]);
+  const access = await pageAccess("/editor/pages", ["editorial_board", "admin"]);
   if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error } = await flashFrom(searchParams);
   const pages = await pagesOverview(access.actor);

@@ -9,7 +9,7 @@ import { pageAccess } from "@/server/session";
 export const metadata: Metadata = { title: "Review queue" };
 
 export default async function Queue({ searchParams }: { searchParams: SearchParams }) {
-  const access = await pageAccess("/editor", ["editor", "admin"]);
+  const access = await pageAccess("/editor", ["editorial_board", "admin"]);
   if (!access.ok) return <AccessDenied reason={access.reason} />;
   const { notice, error, one } = await flashFrom(searchParams);
   const actor = access.actor;

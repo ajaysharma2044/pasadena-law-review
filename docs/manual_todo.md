@@ -54,7 +54,7 @@ You never need to send anyone a password or API key. Secrets go straight into Ne
 
 ## 5. People
 
-13. **Editors.** Each editor signs up and applies (Account → Apply to be an editor), and you approve them in Admin → Applications. You can also change roles directly in Admin → Members.
+13. **Editorial board.** Each board member signs up and applies (Account → Apply to join the editorial board), and you approve them in Admin → Applications. You can also change roles directly in Admin → Members.
     - Accepting a piece needs recommendations from **two editors who aren't the author**.
     - If you wrote "A Second Draft", you can't review it. Two other editors must.
 14. **A second administrator** (**Recommended**), so the Review isn't locked out if you lose access. Promote a trusted editor in Admin → Members.

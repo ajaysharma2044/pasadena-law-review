@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AccessDenied, Flash, FormNav, Page, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
+import { AccessDenied, Flash, FormNav, Page, RoleBadge, flashFrom, formatDateTime, type SearchParams } from "@/components/ui";
 import { myAwards } from "@/server/services/badges";
 import { myApplications } from "@/server/services/applications";
 import { getProfile } from "@/server/services/profile";
@@ -8,8 +8,6 @@ import { currentActor } from "@/server/session";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = { title: "Your account", robots: { index: false } };
-
-const ROLE_LABEL = { member: "Author (member)", editor: "Editor", admin: "Administrator" } as const;
 
 export default async function AccountPage({ searchParams }: { searchParams: SearchParams }) {
   const { notice, error } = await flashFrom(searchParams);
@@ -29,7 +27,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
         <dt>Email</dt>
         <dd>{actor.email}</dd>
         <dt>Access</dt>
-        <dd>{ROLE_LABEL[actor.role]}</dd>
+        <dd><RoleBadge role={actor.role} /></dd>
       </dl>
 
       <h2>Public profile</h2>
@@ -74,17 +72,17 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
               ))}
             </ul>
           ) : (
-            <p>You can submit writing as a member. Editors also review submissions and edit pages.</p>
+            <p>You can submit writing as a member. The editorial board also reviews submissions and edits pages.</p>
           )}
           {applications.some((a) => a.status === "pending") ? null : (
             <p>
-              <Link className="button" href="/account/apply">Apply to be an editor</Link>
+              <Link className="button" href="/account/apply">Apply to join the editorial board</Link>
             </p>
           )}
         </>
       ) : (
         <p>
-          You have editorial access. <Link href="/editor">Open the review queue</Link>
+          You’re on the editorial board. <Link href="/editor">Open the review queue</Link>
           {actor.role === "admin" ? (
             <>
               {" "}or <Link href="/admin">the administration pages</Link>

@@ -44,7 +44,7 @@ export const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const stale = () => conflict("stale", "Someone changed this since you opened it. Reload to see the changes, then try again.");
 const badTransition = () => conflict("invalid_transition", "That action isn’t available at this stage.");
 const appUrl = () => getConfig().appUrl;
-const isEditorRole = (a: Actor) => a.role === "editor" || a.role === "admin";
+const isEditorRole = (a: Actor) => a.role === "editorial_board" || a.role === "admin";
 
 function clip(input: Record<string, unknown>, key: keyof typeof LIMITS) {
   const v = input[key];
@@ -196,7 +196,7 @@ export async function submit(actor: Actor, id: string, expectedVersion: number, 
           .select({ id: user.id, email: user.email })
           .from(memberships)
           .innerJoin(user, eq(user.id, memberships.userId))
-          .where(and(inArray(memberships.role, ["editor", "admin"]), eq(memberships.status, "active"), ne(user.id, actor.userId)));
+          .where(and(inArray(memberships.role, ["editorial_board", "admin"]), eq(memberships.status, "active"), ne(user.id, actor.userId)));
     const note = templates.newSubmissionForEditors(pub, m.title, resubmission ? `revised ${KIND_WORD[m.kind]}` : KIND_WORD[m.kind], `${appUrl()}/editor/manuscripts/${id}`);
     for (const r of recipients) {
       await enqueueEmail(tx, { kind: "new_submission", to: r.email, toUserId: r.id, ...note, idempotencyKey: `submission:${rev.id}:editor:${r.id}` });

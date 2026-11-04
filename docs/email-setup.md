@@ -10,7 +10,7 @@ Status:
 |---|---|---|
 | Sign-up confirmation link | New member | `verify_email` |
 | Password reset link | Member | `reset_password` |
-| Editor application received / decided | Applicant | `application_received`, `application_decided` |
+| Editorial board application received / decided | Applicant | `application_received`, `application_decided` |
 | Submission receipt | Author | `submission_received` |
 | New submission or resubmission | Active editors (or assigned reviewers for a resubmission) | `new_submission` |
 | Reviewer assigned | That editor | `review_assigned` |

@@ -15,7 +15,7 @@ export function isUniqueViolation(e: unknown) {
 }
 
 export async function submitApplication(actor: Actor, statement: string, experience: string) {
-  if (actor.role !== "member") throw conflict("already_editor", "You already have editorial access.");
+  if (actor.role !== "member") throw conflict("already_editor", "You’re already on the editorial board.");
   if (!statement.trim()) throw invalid("Tell us why you want to edit.", { statement: "required" });
   const db = getDb();
   const pub = (await getSettings()).publication_name;
@@ -66,7 +66,7 @@ export async function decideApplication(actor: Actor, id: string, decision: stri
     if (decision === "approve") {
       await tx
         .update(memberships)
-        .set({ role: "editor", updatedBy: actor.userId, updatedAt: new Date() })
+        .set({ role: "editorial_board", updatedBy: actor.userId, updatedAt: new Date() })
         .where(and(eq(memberships.userId, app.userId), eq(memberships.role, "member")));
     }
     await audit(tx, { actorId: actor.userId, action: `application.${decision}`, targetType: "application", targetId: id, metadata: { applicant: app.userId } });
